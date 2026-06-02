@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PetVission — Reservas de Salas</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+<link href="../../assets/css/admin.css" rel="stylesheet"/>
+<style>
+:root{
+  --teal:#1a9e8f;--teal-dark:#137a6e;--teal-light:#e6f7f5;--teal-mid:#5bbdb5;
+  --pink:#f472b6;--pink-light:#fdf2f8;
+  --amber:#f59e0b;--amber-light:#fffbeb;
+  --purple:#7c3aed;--purple-light:#f5f3ff;
+  --sky:#0ea5e9;--sky-light:#f0f9ff;
+  --green:#16a34a;--green-light:#f0fdf4;
+  --red:#dc2626;--red-light:#fef2f2;
+  --slate:#334155;--slate-light:#f8fafc;
+  --gray-border:#e2e8f0;--white:#fff;
+  --font-body:'DM Sans',sans-serif;
+  --font-display:'Nunito',sans-serif;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.07);
+  --shadow-md:0 4px 16px rgba(0,0,0,.09);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.14);
+  --radius:10px;
+}
+*,*::before,*::after{box-sizing:border-box;}
+body{font-family:var(--font-body);background:#f1f5f9;color:var(--slate);font-size:13.5px;margin:0;}
+
+/* ── Layout ── */
+.page-layout{display:flex;height:100vh;overflow:hidden;}
+.admin-layout{height:100vh;overflow:hidden;}
+.admin-main{overflow:hidden;}
+.page-sidebar{
+  width:230px;flex-shrink:0;
+  background:linear-gradient(180deg,#1e1b4b 0%,#4c1d95 100%);
+  color:white;display:flex;flex-direction:column;
+  box-shadow:4px 0 20px rgba(0,0,0,.12);z-index:100;
+  transition:transform .25s ease;
+}
+.sidebar-brand{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.1);}
+.brand-icon{width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:10px;display:grid;place-items:center;font-size:1rem;}
+.brand-name{font-family:var(--font-display);font-weight:900;font-size:.95rem;}
+.brand-sub{font-size:.67rem;opacity:.6;margin-top:1px;}
+.sidebar-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;}
+.sidebar-nav::-webkit-scrollbar{display:none;}
+.nav-label{font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;opacity:.45;padding:10px 10px 4px;}
+.nav-link-item{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;
+  border-radius:8px;color:rgba(255,255,255,.7);text-decoration:none;
+  font-size:.8rem;font-weight:600;transition:all .15s;
+}
+.nav-link-item:hover{background:rgba(255,255,255,.12);color:white;}
+.nav-link-item.active{background:rgba(255,255,255,.18);color:white;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15);}
+.nav-link-item i{font-size:1rem;width:18px;text-align:center;}
+.sidebar-footer{padding:14px 16px;border-top:1px solid rgba(255,255,255,.1);}
+.av-sm{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.25);display:grid;place-items:center;font-size:.72rem;font-weight:800;color:white;flex-shrink:0;}
+
+/* ── Main ── */
+.page-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+.topbar{
+  background:white;border-bottom:1px solid var(--gray-border);
+  height:56px;padding:0 24px;display:flex;align-items:center;gap:14px;flex-shrink:0;z-index:50;
+}
+.topbar-title{font-family:var(--font-display);font-weight:800;font-size:1rem;color:var(--slate);}
+.topbar-subtitle{font-size:.72rem;color:#94a3b8;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.topbar-btn{border:1.5px solid var(--gray-border);background:white;border-radius:8px;padding:7px 14px;font-size:.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--slate);transition:all .15s;font-family:var(--font-body);}
+.topbar-btn:hover{border-color:var(--purple);color:var(--purple);background:var(--purple-light);}
+.topbar-btn.primary{background:var(--purple);color:white;border-color:var(--purple);}
+.topbar-btn.primary:hover{background:#6d28d9;}
+.topbar-btn.teal{background:var(--teal);color:white;border-color:var(--teal);}
+.topbar-btn.teal:hover{background:var(--teal-dark);}
+
+/* ── Content ── */
+.page-content{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:16px;}
+.page-content::-webkit-scrollbar{width:6px;}
+.page-content::-webkit-scrollbar-thumb{background:var(--gray-border);border-radius:3px;}
+
+/* ── Stats row ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.stat-card{background:white;border:1px solid var(--gray-border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-sm);}
+.stat-icon{width:40px;height:40px;border-radius:9px;display:grid;place-items:center;font-size:1.1rem;flex-shrink:0;}
+.stat-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin-bottom:2px;}
+.stat-val{font-family:var(--font-display);font-weight:900;font-size:1.35rem;color:var(--slate);line-height:1;}
+.stat-sub{font-size:.67rem;color:#94a3b8;margin-top:2px;}
+
+/* ── View bar ── */
+.view-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.view-tabs{display:flex;border:1px solid var(--gray-border);border-radius:8px;overflow:hidden;background:white;}
+.view-tab{border:none;background:none;padding:7px 18px;font-size:.75rem;font-weight:700;color:#94a3b8;cursor:pointer;transition:all .15s;font-family:var(--font-body);}
+.view-tab.active{background:var(--purple);color:white;}
+.room-filter{display:flex;border:1px solid var(--gray-border);border-radius:8px;overflow:hidden;background:white;}
+.room-tab{border:none;background:none;padding:7px 14px;font-size:.73rem;font-weight:700;color:#94a3b8;cursor:pointer;transition:all .15s;font-family:var(--font-body);}
+.room-tab.active.box{background:var(--teal);color:white;}
+.room-tab.active.qx{background:var(--pink);color:white;}
+.nav-arrows{display:flex;gap:3px;}
+.nav-arrow{border:1px solid var(--gray-border);background:white;border-radius:6px;width:28px;height:28px;display:grid;place-items:center;cursor:pointer;font-size:.85rem;color:var(--slate);transition:all .15s;}
+.nav-arrow:hover{background:var(--purple-light);border-color:var(--purple);color:var(--purple);}
+.period-label{font-family:var(--font-display);font-weight:800;font-size:.92rem;color:var(--slate);}
+.btn-today{border:1px solid var(--gray-border);background:white;border-radius:6px;padding:5px 12px;font-size:.73rem;font-weight:700;color:var(--slate);cursor:pointer;font-family:var(--font-body);}
+.btn-today:hover{background:var(--purple-light);border-color:var(--purple);color:var(--purple);}
+
+/* ── Legend ── */
+.legend-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:.72rem;font-weight:700;}
+.legend-dot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:4px;}
+
+/* ── Day view ── */
+.day-grid{display:grid;gap:12px;flex:1;}
+.room-section{background:white;border:1px solid var(--gray-border);border-radius:var(--radius);overflow:hidden;}
+.room-section-header{
+  padding:10px 16px;display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid var(--gray-border);background:var(--slate-light);
+}
+.room-section-header.box{border-left:4px solid var(--teal);}
+.room-section-header.qx{border-left:4px solid var(--pink);}
+.room-badge{padding:3px 10px;border-radius:20px;font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;}
+.room-badge.box{background:#ccf2ec;color:#0d6e63;}
+.room-badge.qx{background:#fce7f3;color:#9d174d;}
+.room-name{font-family:var(--font-display);font-weight:800;font-size:.9rem;color:var(--slate);}
+.room-meta{font-size:.68rem;color:#94a3b8;margin-left:auto;}
+.room-add-btn{background:none;border:1.5px dashed var(--gray-border);border-radius:7px;padding:4px 12px;font-size:.72rem;font-weight:700;color:#94a3b8;cursor:pointer;transition:all .15s;}
+.room-add-btn:hover{border-color:var(--purple);color:var(--purple);background:var(--purple-light);}
+
+.room-slots{padding:10px 14px;display:flex;flex-direction:column;gap:6px;}
+.slot-empty{color:#cbd5e1;font-size:.78rem;text-align:center;padding:14px;border:1.5px dashed var(--gray-border);border-radius:8px;cursor:pointer;}
+.slot-empty:hover{border-color:var(--purple);color:var(--purple);background:var(--purple-light);}
+
+.slot-card{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  border-radius:8px;border:1px solid var(--gray-border);cursor:pointer;
+  transition:all .15s;position:relative;overflow:hidden;
+}
+.slot-card:hover{box-shadow:var(--shadow-md);transform:translateX(2px);}
+.slot-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px;}
+.slot-card.box-card::before{background:var(--teal);}
+.slot-card.qx-card::before{content:'';background:var(--pink);}
+.slot-time-col{display:flex;flex-direction:column;align-items:center;width:44px;flex-shrink:0;}
+.slot-time-start{font-family:var(--font-display);font-weight:900;font-size:.85rem;color:var(--slate);line-height:1;}
+.slot-time-end{font-size:.62rem;color:#94a3b8;}
+.slot-info{flex:1;min-width:0;}
+.slot-vet{font-weight:800;font-size:.82rem;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.slot-patient{font-size:.7rem;color:#94a3b8;margin-top:1px;}
+.slot-procedure{font-size:.68rem;margin-top:3px;}
+.slot-badge{padding:2px 8px;border-radius:12px;font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;}
+.slot-badge.box{background:#ccf2ec;color:#0d6e63;}
+.slot-badge.qx{background:#fce7f3;color:#9d174d;}
+.slot-badge.urgent{background:#fee2e2;color:#991b1b;}
+.slot-actions{display:flex;gap:4px;opacity:0;transition:opacity .15s;}
+.slot-card:hover .slot-actions{opacity:1;}
+.slot-act-btn{background:none;border:1px solid var(--gray-border);border-radius:6px;width:26px;height:26px;display:grid;place-items:center;cursor:pointer;font-size:.8rem;color:#94a3b8;transition:all .15s;}
+.slot-act-btn:hover{background:var(--red-light);border-color:var(--red);color:var(--red);}
+
+/* ── Week view ── */
+.week-container{background:white;border:1px solid var(--gray-border);border-radius:var(--radius);flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.week-header-row{display:flex;border-bottom:1px solid var(--gray-border);background:var(--slate-light);position:sticky;top:0;z-index:5;}
+.wh-time{width:60px;flex-shrink:0;border-right:1px solid var(--gray-border);}
+.wh-day{flex:1;text-align:center;padding:8px 4px;border-right:1px solid var(--gray-border);}
+.wh-day:last-child{border-right:none;}
+.wh-dn{font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;}
+.wh-dd{font-family:var(--font-display);font-weight:900;font-size:1rem;color:var(--slate);line-height:1.2;}
+.wh-dd.today{background:var(--purple);color:white;width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.86rem;}
+.week-body{display:flex;overflow-y:auto;flex:1;}
+.week-body::-webkit-scrollbar{width:5px;}
+.week-body::-webkit-scrollbar-thumb{background:var(--gray-border);}
+.wb-times{width:60px;flex-shrink:0;border-right:1px solid var(--gray-border);}
+.wb-time-cell{height:64px;border-bottom:1px solid #f1f5f9;display:flex;align-items:flex-start;justify-content:center;padding-top:5px;}
+.wb-time-cell span{font-size:.62rem;font-weight:700;color:#cbd5e1;}
+.wb-days{flex:1;display:flex;}
+.wb-day-col{flex:1;border-right:1px solid var(--gray-border);position:relative;min-height:640px;}
+.wb-day-col:last-child{border-right:none;}
+.wb-hour-line{height:64px;border-bottom:1px solid #f1f5f9;}
+.wk-ev{position:absolute;left:3px;right:3px;border-radius:6px;padding:4px 7px;cursor:pointer;overflow:hidden;transition:all .15s;z-index:2;border-left:3px solid transparent;}
+.wk-ev:hover{z-index:5;filter:brightness(.95);box-shadow:var(--shadow-md);}
+.wk-ev.box{background:#ccf2ec;border-left-color:#0d6e63;}
+.wk-ev.qx{background:#fce7f3;border-left-color:#9d174d;}
+.wk-ev-title{font-weight:800;font-size:.68rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--slate);}
+.wk-ev-sub{font-size:.6rem;color:#64748b;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* ── Month view ── */
+.month-container{background:white;border:1px solid var(--gray-border);border-radius:var(--radius);flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.month-dow-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--gray-border);background:var(--slate-light);}
+.month-dow{text-align:center;padding:8px;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;}
+.month-grid{flex:1;display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:minmax(90px,1fr);overflow-y:auto;}
+.month-grid::-webkit-scrollbar{width:5px;}
+.month-grid::-webkit-scrollbar-thumb{background:var(--gray-border);}
+.month-cell{border-right:1px solid var(--gray-border);border-bottom:1px solid var(--gray-border);padding:5px 5px;overflow:hidden;cursor:pointer;transition:background .1s;}
+.month-cell:hover{background:#f8fafc;}
+.month-cell:nth-child(7n){border-right:none;}
+.mc-num{font-family:var(--font-display);font-weight:800;font-size:.78rem;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin-bottom:3px;color:var(--slate);}
+.mc-num.today{background:var(--purple);color:white;}
+.mc-num.other-month{color:#cbd5e1;}
+.mc-ev{font-size:.6rem;font-weight:700;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mc-ev.box{background:#ccf2ec;color:#0d6e63;}
+.mc-ev.qx{background:#fce7f3;color:#9d174d;}
+.mc-more{font-size:.6rem;color:#94a3b8;font-weight:600;}
+
+/* ── Modal overlay ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-card{background:white;border-radius:16px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;animation:fadeIn .2s ease-out;box-shadow:var(--shadow-lg);}
+.modal-card::-webkit-scrollbar{display:none;}
+@keyframes fadeIn{from{opacity:0;transform:scale(.96) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-head{padding:20px 22px 14px;display:flex;align-items:flex-start;gap:12px;border-bottom:1px solid var(--gray-border);}
+.modal-head-icon{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;font-size:1.2rem;flex-shrink:0;}
+.modal-head-icon.teal{background:var(--teal-light);color:var(--teal);}
+.modal-head-icon.pink{background:var(--pink-light);color:var(--pink);}
+.modal-title{font-family:var(--font-display);font-weight:900;font-size:1rem;color:var(--slate);margin:0;}
+.modal-subtitle{font-size:.72rem;color:#94a3b8;margin-top:2px;}
+.modal-close{margin-left:auto;background:none;border:none;cursor:pointer;color:#94a3b8;font-size:1.1rem;padding:4px;border-radius:6px;transition:all .15s;}
+.modal-close:hover{background:var(--slate-light);color:var(--slate);}
+.modal-body{padding:20px 22px;}
+.mf-group{margin-bottom:14px;}
+.mf-label{font-size:.73rem;font-weight:700;color:var(--slate);display:block;margin-bottom:5px;}
+.mf-input,.mf-select,.mf-textarea{
+  width:100%;border:1.5px solid var(--gray-border);border-radius:8px;
+  padding:9px 12px;font-family:var(--font-body);font-size:.82rem;color:var(--slate);
+  transition:border-color .15s;background:white;
+}
+.mf-input:focus,.mf-select:focus,.mf-textarea:focus{outline:none;border-color:var(--purple);}
+.mf-textarea{resize:none;min-height:72px;}
+.mf-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.mf-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.modal-footer{padding:16px 22px;border-top:1px solid var(--gray-border);display:flex;gap:8px;justify-content:flex-end;}
+.btn-cancel{border:1.5px solid var(--gray-border);background:white;border-radius:8px;padding:8px 20px;font-size:.78rem;font-weight:700;cursor:pointer;color:var(--slate);font-family:var(--font-body);}
+.btn-cancel:hover{background:var(--slate-light);}
+.btn-save{border:none;border-radius:8px;padding:9px 22px;font-size:.78rem;font-weight:700;cursor:pointer;color:white;font-family:var(--font-body);transition:all .15s;}
+.btn-save.teal{background:var(--teal);}
+.btn-save.teal:hover{background:var(--teal-dark);}
+.btn-save.pink{background:var(--pink);}
+.btn-save.pink:hover{background:#e11d8a;}
+
+/* Sala selector cards */
+.room-selector{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:2px;}
+.room-sel-card{border:1.5px solid var(--gray-border);border-radius:8px;padding:10px 8px;text-align:center;cursor:pointer;transition:all .15s;}
+.room-sel-card:hover{border-color:var(--teal);background:var(--teal-light);}
+.room-sel-card.selected.box{border-color:var(--teal);background:var(--teal-light);}
+.room-sel-card.selected.qx{border-color:var(--pink);background:var(--pink-light);}
+.rsc-icon{font-size:1.1rem;margin-bottom:4px;}
+.rsc-name{font-weight:800;font-size:.72rem;color:var(--slate);}
+.rsc-status{font-size:.62rem;margin-top:2px;}
+.rsc-status.free{color:var(--green);}
+.rsc-status.busy{color:var(--red);}
+
+/* Time range picker */
+.time-range{display:flex;align-items:center;gap:8px;}
+.time-sep{font-size:.8rem;color:#94a3b8;font-weight:700;}
+
+/* Urgency pills */
+.urgency-row{display:flex;gap:6px;}
+.urgency-pill{border:1.5px solid var(--gray-border);border-radius:20px;padding:5px 14px;font-size:.72rem;font-weight:700;cursor:pointer;color:#94a3b8;transition:all .15s;background:white;}
+.urgency-pill:hover{border-color:var(--amber);}
+.urgency-pill.selected.normal{border-color:var(--green);background:var(--green-light);color:var(--green);}
+.urgency-pill.selected.urgente{border-color:var(--red);background:var(--red-light);color:var(--red);}
+.urgency-pill.selected.programada{border-color:var(--purple);background:var(--purple-light);color:var(--purple);}
+
+/* Section divider */
+.modal-section-label{font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid var(--gray-border);}
+
+/* Toast */
+.pv-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--slate);color:white;padding:10px 22px;border-radius:22px;font-size:.8rem;font-weight:700;z-index:999;box-shadow:var(--shadow-lg);opacity:0;transition:opacity .25s;pointer-events:none;}
+.pv-toast.show{opacity:1;}
+
+/* Mobile sidebar */
+.page-sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99;}
+@media(max-width:768px){
+  .page-sidebar{position:fixed;top:0;left:0;height:100%;transform:translateX(-100%);}
+  .page-sidebar.open{transform:translateX(0);}
+  .page-sidebar-overlay.open{display:block;}
+  .topbar-hamburger{display:block!important;}
+  .stats-row{grid-template-columns:repeat(2,1fr);}
+  .wh-day .wh-dn{display:none;}
+  .room-selector{grid-template-columns:repeat(2,1fr);}
+  .mf-row,.mf-row-3{grid-template-columns:1fr;}
+}
+.topbar-hamburger{display:none;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--slate);}
+</style>
+</head>
+<body>
+<div class="admin-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar" id="adminSidebar">
+
+    <div class="admin-sidebar-brand">
+      <div class="d-flex align-items-center gap-2">
+        <div class="brand-icon">
+          <i class="bi bi-heart-pulse-fill"></i>
+        </div>
+        <div>
+          <div class="fw-bold">PetVission</div>
+          <div style="font-size:0.72rem;opacity:0.7;">Panel Administrador</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="admin-nav">
+
+      <div class="admin-nav-label">Principal</div>
+      <a href="dashboard.html" class="admin-nav-link">
+        <i class="bi bi-grid-fill"></i>
+        <span>Inicio</span>
+      </a>
+
+      <div class="admin-nav-label mt-3">Gestión</div>
+      <a href="usuarios.html" class="admin-nav-link">
+        <i class="bi bi-people-fill"></i>
+        <span>Usuarios</span>
+      </a>
+      <a href="turnos.html" class="admin-nav-link">
+        <i class="bi bi-heart-pulse-fill"></i>
+        <span>Turnos</span>
+      </a>
+      <a href="reservas.html" class="admin-nav-link active">
+        <i class="bi bi-paw-fill"></i>
+        <span>Reserva de salas</span>
+      </a>
+      <a href="inventario.html" class="admin-nav-link">
+        <i class="bi bi-box-seam-fill"></i>
+        <span>Inventario</span>
+      </a>
+
+      <div class="admin-nav-label mt-3">Sistema</div>
+      <a href="reportes.html" class="admin-nav-link">
+        <i class="bi bi-bar-chart-fill"></i>
+        <span>Reportes</span>
+      </a>
+      <a href="configuracion.html" class="admin-nav-link">
+        <i class="bi bi-gear-fill"></i>
+        <span>Configuración</span>
+      </a>
+
+    </nav>
+
+    <div class="admin-sidebar-footer">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <div class="admin-avatar">AD</div>
+        <div>
+          <div class="fw-semibold small">Administrador</div>
+          <div style="font-size:0.72rem;opacity:0.7;">admin@petvission.cl</div>
+        </div>
+      </div>
+      <a href="../../index.html" class="admin-nav-link px-0">
+        <i class="bi bi-box-arrow-right"></i>
+        <span>Cerrar Sesión</span>
+      </a>
+    </div>
+
+  </aside>
+
+  <div class="admin-sidebar-overlay" id="adminOverlay" onclick="toggleSidebar()"></div>
+
+<!-- ══ MAIN ══ -->
+<div class="admin-main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <button class="topbar-hamburger" onclick="toggleSidebar()"><i class="bi bi-list fs-4"></i></button>
+    <div>
+      <div class="topbar-title">Reservas de Salas</div>
+      <div class="topbar-subtitle" id="fechaHoy"></div>
+    </div>
+    <div class="topbar-right">
+      <button class="topbar-btn teal" onclick="openBoxModal()">
+        <i class="bi bi-house-heart-fill"></i> Asignar Box
+      </button>
+      <button class="topbar-btn primary" onclick="openQxModal()">
+        <i class="bi bi-scissors"></i> Reservar Pabellón
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="page-content">
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#ccf2ec;color:#0d6e63;"><i class="bi bi-house-heart-fill"></i></div>
+        <div>
+          <div class="stat-label">Boxes hoy</div>
+          <div class="stat-val" id="statBoxes">6</div>
+          <div class="stat-sub">de 8 disponibles</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fce7f3;color:#9d174d;"><i class="bi bi-scissors"></i></div>
+        <div>
+          <div class="stat-label">Pabellones hoy</div>
+          <div class="stat-val" id="statQx">3</div>
+          <div class="stat-sub">2 urgentes</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#ede9fe;color:#5b21b6;"><i class="bi bi-person-badge-fill"></i></div>
+        <div>
+          <div class="stat-label">Veterinarios</div>
+          <div class="stat-val">8</div>
+          <div class="stat-sub">activos hoy</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fef3c7;color:#92400e;"><i class="bi bi-clock-fill"></i></div>
+        <div>
+          <div class="stat-label">Próxima</div>
+          <div class="stat-val">10:30</div>
+          <div class="stat-sub">Cirugía ortopédica</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- View bar -->
+    <div class="view-bar">
+      <div class="view-tabs">
+        <button class="view-tab active" onclick="switchView('day',this)">Día</button>
+        <button class="view-tab" onclick="switchView('week',this)">Semana</button>
+        <button class="view-tab" onclick="switchView('month',this)">Mes</button>
+      </div>
+      <div class="room-filter">
+        <button class="room-tab active box" id="filterAll" onclick="filterRoom('all',this)">Todos</button>
+        <button class="room-tab" id="filterBox" onclick="filterRoom('box',this)">Boxes</button>
+        <button class="room-tab" id="filterQx" onclick="filterRoom('qx',this)">Pabellón</button>
+      </div>
+      <div class="nav-arrows">
+        <button class="nav-arrow" onclick="navigate(-1)"><i class="bi bi-chevron-left"></i></button>
+        <button class="nav-arrow" onclick="navigate(1)"><i class="bi bi-chevron-right"></i></button>
+      </div>
+      <button class="btn-today" onclick="goToday()">Hoy</button>
+      <span class="period-label" id="periodLabel"></span>
+      <div class="legend-row ms-auto">
+        <span><span class="legend-dot" style="background:#ccf2ec;border:1.5px solid #0d6e63;"></span>Box atención</span>
+        <span><span class="legend-dot" style="background:#fce7f3;border:1.5px solid #9d174d;"></span>Pabellón</span>
+        <span><span class="legend-dot" style="background:#fee2e2;border:1.5px solid #991b1b;"></span>Urgente</span>
+      </div>
+    </div>
+
+    <!-- Views container -->
+    <div id="viewContainer" style="flex:1;display:flex;flex-direction:column;gap:12px;min-height:0;"></div>
+
+  </div><!-- /page-content -->
+</div><!-- /admin-main -->
+</div><!-- /admin-layout -->
+
+<!-- ══ MODAL: BOX DE ATENCIÓN ══ -->
+<div class="modal-overlay" id="boxModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div class="modal-head-icon teal"><i class="bi bi-house-heart-fill"></i></div>
+      <div>
+        <h5 class="modal-title">Asignar Box de Atención</h5>
+        <div class="modal-subtitle">Asigna un veterinario a un box por día</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('boxModal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body">
+
+      <div class="modal-section-label">Seleccionar Box</div>
+      <div class="room-selector" id="boxSelector">
+        <div class="room-sel-card" data-room="Box 1" onclick="selectRoom(this,'box')">
+          <div class="rsc-icon">🏠</div>
+          <div class="rsc-name">Box 1</div>
+          <div class="rsc-status free">Disponible</div>
+        </div>
+        <div class="room-sel-card" data-room="Box 2" onclick="selectRoom(this,'box')">
+          <div class="rsc-icon">🏠</div>
+          <div class="rsc-name">Box 2</div>
+          <div class="rsc-status busy">Ocupado</div>
+        </div>
+        <div class="room-sel-card" data-room="Box 3" onclick="selectRoom(this,'box')">
+          <div class="rsc-icon">🏠</div>
+          <div class="rsc-name">Box 3</div>
+          <div class="rsc-status free">Disponible</div>
+        </div>
+        <div class="room-sel-card" data-room="Box 4" onclick="selectRoom(this,'box')">
+          <div class="rsc-icon">🏠</div>
+          <div class="rsc-name">Box 4</div>
+          <div class="rsc-status free">Disponible</div>
+        </div>
+        <div class="room-sel-card" data-room="Box 5" onclick="selectRoom(this,'box')">
+          <div class="rsc-icon">🏠</div>
+          <div class="rsc-name">Box 5</div>
+          <div class="rsc-status busy">Ocupado</div>
+        </div>
+        <div class="room-sel-card" data-room="Box 6" onclick="selectRoom(this,'box')">
+          <div class="rsc-icon">🏠</div>
+          <div class="rsc-name">Box 6</div>
+          <div class="rsc-status free">Disponible</div>
+        </div>
+      </div>
+
+      <div class="mf-group" style="margin-top:16px;">
+        <div class="modal-section-label">Datos de la Asignación</div>
+        <div class="mf-row">
+          <div>
+            <label class="mf-label">Veterinario</label>
+            <select class="mf-select" id="boxVet">
+              <option value="">Seleccionar...</option>
+              <option>Dra. Valentina Rojas</option>
+              <option>Dr. Matías Fernández</option>
+              <option>Dra. Camila Herrera</option>
+              <option>Dr. Sebastián Mora</option>
+              <option>Dra. Isidora Vega</option>
+              <option>Dr. Felipe Araya</option>
+              <option>Dra. Sofía Castro</option>
+              <option>Dr. Rodrigo Díaz</option>
+            </select>
+          </div>
+          <div>
+            <label class="mf-label">Fecha</label>
+            <input type="date" class="mf-input" id="boxDate"/>
+          </div>
+        </div>
+        <div class="mf-row" style="margin-top:10px;">
+          <div>
+            <label class="mf-label">Hora inicio</label>
+            <input type="time" class="mf-input" id="boxTimeStart" value="08:00"/>
+          </div>
+          <div>
+            <label class="mf-label">Hora fin</label>
+            <input type="time" class="mf-input" id="boxTimeEnd" value="13:00"/>
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <label class="mf-label">Tipo de turno</label>
+          <select class="mf-select" id="boxShift">
+            <option value="mañana">Turno Mañana (08:00 – 13:00)</option>
+            <option value="tarde">Turno Tarde (13:00 – 18:00)</option>
+            <option value="noche">Turno Noche (18:00 – 23:00)</option>
+            <option value="personalizado">Personalizado</option>
+          </select>
+        </div>
+        <div style="margin-top:10px;">
+          <label class="mf-label">Observaciones</label>
+          <textarea class="mf-textarea" id="boxNotes" placeholder="Ej: Solo consultas de medicina interna..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('boxModal')">Cancelar</button>
+      <button class="btn-save teal" onclick="saveBox()"><i class="bi bi-check-lg me-1"></i>Confirmar Asignación</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: PABELLÓN / QUIRÓFANO ══ -->
+<div class="modal-overlay" id="qxModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div class="modal-head-icon pink"><i class="bi bi-scissors"></i></div>
+      <div>
+        <h5 class="modal-title">Reservar Tiempo de Pabellón</h5>
+        <div class="modal-subtitle">Asigna tiempo quirúrgico por veterinario y paciente</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('qxModal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body">
+
+      <div class="modal-section-label">Seleccionar Pabellón</div>
+      <div class="room-selector" id="qxSelector" style="grid-template-columns:repeat(2,1fr);">
+        <div class="room-sel-card" data-room="Pabellón 1" onclick="selectRoom(this,'qx')">
+          <div class="rsc-icon">🔬</div>
+          <div class="rsc-name">Pabellón 1</div>
+          <div class="rsc-status free">Disponible</div>
+        </div>
+        <div class="room-sel-card" data-room="Pabellón 2" onclick="selectRoom(this,'qx')">
+          <div class="rsc-icon">🔬</div>
+          <div class="rsc-name">Pabellón 2</div>
+          <div class="rsc-status busy">Ocupado</div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="modal-section-label">Veterinario Cirujano</div>
+        <div class="mf-row">
+          <div>
+            <label class="mf-label">Cirujano principal</label>
+            <select class="mf-select" id="qxVet">
+              <option value="">Seleccionar...</option>
+              <option>Dra. Valentina Rojas</option>
+              <option>Dr. Matías Fernández</option>
+              <option>Dra. Camila Herrera</option>
+              <option>Dr. Sebastián Mora</option>
+              <option>Dra. Isidora Vega</option>
+              <option>Dr. Felipe Araya</option>
+            </select>
+          </div>
+          <div>
+            <label class="mf-label">Asistente (opcional)</label>
+            <select class="mf-select" id="qxAssist">
+              <option value="">Ninguno</option>
+              <option>Dra. Sofía Castro</option>
+              <option>Dr. Rodrigo Díaz</option>
+              <option>Téc. Andrea Muñoz</option>
+              <option>Téc. Jorge Pinto</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div class="modal-section-label">Paciente</div>
+        <div class="mf-row">
+          <div>
+            <label class="mf-label">Nombre del paciente</label>
+            <input type="text" class="mf-input" id="qxPatient" placeholder="Ej: Luna"/>
+          </div>
+          <div>
+            <label class="mf-label">Especie / Raza</label>
+            <input type="text" class="mf-input" id="qxBreed" placeholder="Ej: Felino – Persa"/>
+          </div>
+        </div>
+        <div class="mf-row" style="margin-top:10px;">
+          <div>
+            <label class="mf-label">Propietario</label>
+            <input type="text" class="mf-input" id="qxOwner" placeholder="Nombre del dueño"/>
+          </div>
+          <div>
+            <label class="mf-label">Ficha / ID</label>
+            <input type="text" class="mf-input" id="qxId" placeholder="Ej: 00234"/>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div class="modal-section-label">Procedimiento</div>
+        <div class="mf-group">
+          <label class="mf-label">Tipo de cirugía</label>
+          <select class="mf-select" id="qxProcedure">
+            <option value="">Seleccionar procedimiento...</option>
+            <option>Esterilización (OVH)</option>
+            <option>Orquiectomía</option>
+            <option>Cirugía ortopédica</option>
+            <option>Extracción dental</option>
+            <option>Masa / tumor</option>
+            <option>Cesárea de emergencia</option>
+            <option>Laparotomía exploratoria</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="mf-group">
+          <label class="mf-label">Prioridad</label>
+          <div class="urgency-row">
+            <button class="urgency-pill selected programada" onclick="selectUrgency(this,'programada')">Programada</button>
+            <button class="urgency-pill" onclick="selectUrgency(this,'normal')">Normal</button>
+            <button class="urgency-pill" onclick="selectUrgency(this,'urgente')">Urgente</button>
+          </div>
+        </div>
+        <div class="mf-row-3">
+          <div>
+            <label class="mf-label">Fecha</label>
+            <input type="date" class="mf-input" id="qxDate"/>
+          </div>
+          <div>
+            <label class="mf-label">Hora inicio</label>
+            <input type="time" class="mf-input" id="qxTimeStart" value="09:00"/>
+          </div>
+          <div>
+            <label class="mf-label">Duración est.</label>
+            <select class="mf-select" id="qxDuration">
+              <option>30 min</option>
+              <option>45 min</option>
+              <option selected>1 hora</option>
+              <option>1.5 horas</option>
+              <option>2 horas</option>
+              <option>2.5 horas</option>
+              <option>3+ horas</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <label class="mf-label">Notas preoperatorias</label>
+          <textarea class="mf-textarea" id="qxNotes" placeholder="Ayuno, medicación previa, alergias conocidas..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('qxModal')">Cancelar</button>
+      <button class="btn-save pink" onclick="saveQx()"><i class="bi bi-check-lg me-1"></i>Reservar Pabellón</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="pv-toast" id="pvToast"></div>
+
+<script>
+/* ────────── State ────────── */
+let currentView = 'day';
+let currentDate = new Date();
+let activeFilter = 'all';
+let selectedBoxRoom = null;
+let selectedQxRoom  = null;
+let selectedUrgencyEl = null;
+
+const VETS = ['Dr. Fernández','Dra. Rojas','Dra. Herrera','Dr. Mora','Dra. Vega','Dr. Araya'];
+const PROCEDURES = ['OVH','Orquiect.','Ortopedia','Dental','Masa','Cesárea'];
+const BOXES = ['Box 1','Box 2','Box 3','Box 4','Box 5','Box 6','Box 7','Box 8'];
+
+/* Sample reservations data */
+let reservations = [
+  {id:1,type:'box',room:'Box 1',vet:'Dra. Rojas',date:'2026-05-29',start:'08:00',end:'13:00',shift:'mañana',notes:''},
+  {id:2,type:'box',room:'Box 2',vet:'Dr. Fernández',date:'2026-05-29',start:'13:00',end:'18:00',shift:'tarde',notes:''},
+  {id:3,type:'box',room:'Box 3',vet:'Dra. Herrera',date:'2026-05-29',start:'08:00',end:'13:00',shift:'mañana',notes:''},
+  {id:4,type:'qx',room:'Pabellón 1',vet:'Dr. Mora',date:'2026-05-29',start:'09:00',end:'10:00',patient:'Luna',breed:'Felino – Persa',procedure:'OVH',urgency:'programada',owner:'María González',pid:'00234',notes:'Ayuno 8h'},
+  {id:5,type:'qx',room:'Pabellón 1',vet:'Dra. Vega',date:'2026-05-29',start:'11:00',end:'13:00',patient:'Max',breed:'Canino – Lab',procedure:'Ortopedia',urgency:'urgente',owner:'Carlos Ruiz',pid:'00891',notes:'Fractura fémur'},
+  {id:6,type:'qx',room:'Pabellón 2',vet:'Dr. Araya',date:'2026-05-29',start:'10:00',end:'11:00',patient:'Simba',breed:'Felino – DSH',procedure:'Dental',urgency:'normal',owner:'Ana Torres',pid:'00315',notes:''},
+  {id:7,type:'box',room:'Box 1',vet:'Dra. Rojas',date:'2026-05-30',start:'08:00',end:'13:00',shift:'mañana',notes:''},
+  {id:8,type:'box',room:'Box 4',vet:'Dr. Fernández',date:'2026-05-28',start:'08:00',end:'13:00',shift:'mañana',notes:''},
+  {id:9,type:'qx',room:'Pabellón 2',vet:'Dra. Herrera',date:'2026-05-31',start:'09:00',end:'10:30',patient:'Rocky',breed:'Canino – Boxer',procedure:'Cesárea',urgency:'urgente',owner:'Luis Pinto',pid:'00102',notes:'Emergencia'},
+];
+let nextId = 10;
+
+/* ────────── Init ────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  const today = new Date();
+  document.getElementById('fechaHoy').textContent =
+    today.toLocaleDateString('es-CL',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const fmt = d => d.toISOString().split('T')[0];
+  document.getElementById('boxDate').value = fmt(today);
+  document.getElementById('qxDate').value  = fmt(today);
+  renderView();
+});
+
+/* ────────── Sidebar ────────── */
+function toggleSidebar(){
+  document.getElementById('adminSidebar').classList.toggle('open');
+  document.getElementById('adminOverlay').classList.toggle('show');
+}
+
+/* ────────── View switching ────────── */
+function switchView(v, btn){
+  currentView = v;
+  document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderView();
+}
+
+function filterRoom(f, btn){
+  activeFilter = f;
+  document.querySelectorAll('.room-tab').forEach(t => {
+    t.classList.remove('active','box','qx');
+  });
+  btn.classList.add('active');
+  if(f==='box') btn.classList.add('box');
+  else if(f==='qx') btn.classList.add('qx');
+  else btn.classList.add('box');
+  renderView();
+}
+
+function navigate(dir){
+  if(currentView==='day') currentDate.setDate(currentDate.getDate()+dir);
+  else if(currentView==='week') currentDate.setDate(currentDate.getDate()+dir*7);
+  else currentDate.setMonth(currentDate.getMonth()+dir);
+  renderView();
+}
+
+function goToday(){ currentDate = new Date(); renderView(); }
+
+function renderView(){
+  const c = document.getElementById('viewContainer');
+  if(currentView==='day')   renderDay(c);
+  else if(currentView==='week') renderWeek(c);
+  else renderMonth(c);
+}
+
+/* ────────── Day view ────────── */
+function renderDay(c){
+  const dateStr = fmtDate(currentDate);
+  document.getElementById('periodLabel').textContent =
+    currentDate.toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  const recs = reservations.filter(r => r.date === dateStr && filterMatch(r));
+  const boxes = [...new Set(recs.filter(r=>r.type==='box').map(r=>r.room))].sort();
+  const qxRooms = [...new Set(recs.filter(r=>r.type==='qx').map(r=>r.room))].sort();
+
+  let html = '';
+
+  if(activeFilter !== 'qx'){
+    const allBoxNames = ['Box 1','Box 2','Box 3','Box 4','Box 5','Box 6','Box 7','Box 8'];
+    allBoxNames.forEach(bx => {
+      const items = recs.filter(r=>r.type==='box'&&r.room===bx);
+      html += `<div class="room-section">
+        <div class="room-section-header box">
+          <span class="room-badge box">Box</span>
+          <span class="room-name">${bx}</span>
+          <span class="room-meta">${items.length} asignación${items.length!==1?'es':''}</span>
+          <button class="room-add-btn" onclick="openBoxModalFor('${bx}')"><i class="bi bi-plus-lg me-1"></i>Asignar</button>
+        </div>
+        <div class="room-slots">`;
+      if(items.length===0){
+        html += `<div class="slot-empty" onclick="openBoxModalFor('${bx}')"><i class="bi bi-plus-circle me-1"></i>Sin asignación — click para asignar</div>`;
+      } else {
+        items.forEach(it => {
+          html += slotCardBox(it);
+        });
+      }
+      html += `</div></div>`;
+    });
+  }
+
+  if(activeFilter !== 'box'){
+    ['Pabellón 1','Pabellón 2'].forEach(qx => {
+      const items = recs.filter(r=>r.type==='qx'&&r.room===qx);
+      html += `<div class="room-section">
+        <div class="room-section-header qx">
+          <span class="room-badge qx">Pabellón</span>
+          <span class="room-name">${qx}</span>
+          <span class="room-meta">${items.length} cirugía${items.length!==1?'s':''}</span>
+          <button class="room-add-btn" onclick="openQxModalFor('${qx}')"><i class="bi bi-plus-lg me-1"></i>Reservar</button>
+        </div>
+        <div class="room-slots">`;
+      if(items.length===0){
+        html += `<div class="slot-empty" onclick="openQxModalFor('${qx}')"><i class="bi bi-plus-circle me-1"></i>Sin reservas — click para reservar</div>`;
+      } else {
+        items.sort((a,b)=>a.start.localeCompare(b.start)).forEach(it => {
+          html += slotCardQx(it);
+        });
+      }
+      html += `</div></div>`;
+    });
+  }
+
+  c.innerHTML = html || '<div class="text-center text-muted py-5">No hay reservas para este filtro.</div>';
+}
+
+function slotCardBox(r){
+  return `<div class="slot-card box-card" onclick="showDetail(${r.id})">
+    <div class="slot-time-col">
+      <div class="slot-time-start">${r.start}</div>
+      <div class="slot-time-end">${r.end}</div>
+    </div>
+    <div class="slot-info">
+      <div class="slot-vet"><i class="bi bi-person-fill" style="color:var(--teal);"></i> ${r.vet}</div>
+      <div class="slot-patient">${r.room}</div>
+      <span class="slot-badge box">${r.shift||'turno'}</span>
+    </div>
+    <div class="slot-actions">
+      <button class="slot-act-btn" title="Eliminar" onclick="event.stopPropagation();deleteRes(${r.id})"><i class="bi bi-trash3"></i></button>
+    </div>
+  </div>`;
+}
+
+function slotCardQx(r){
+  const urgClass = r.urgency==='urgente'?'urgent':'qx';
+  return `<div class="slot-card qx-card" onclick="showDetail(${r.id})">
+    <div class="slot-time-col">
+      <div class="slot-time-start">${r.start}</div>
+      <div class="slot-time-end">${r.end||calcEnd(r.start,r.duration||'1 hora')}</div>
+    </div>
+    <div class="slot-info">
+      <div class="slot-vet"><i class="bi bi-scissors" style="color:var(--pink);"></i> ${r.vet}</div>
+      <div class="slot-patient"><i class="bi bi-heart-fill" style="font-size:.6rem;color:var(--pink);"></i> ${r.patient||'—'} · ${r.breed||''}</div>
+      <div class="slot-procedure" style="color:#94a3b8;">${r.procedure||''}</div>
+      <span class="slot-badge ${urgClass}">${r.urgency||'normal'}</span>
+    </div>
+    <div class="slot-actions">
+      <button class="slot-act-btn" title="Eliminar" onclick="event.stopPropagation();deleteRes(${r.id})"><i class="bi bi-trash3"></i></button>
+    </div>
+  </div>`;
+}
+
+/* ────────── Week view ────────── */
+function renderWeek(c){
+  const weekStart = getWeekStart(currentDate);
+  const weekEnd   = new Date(weekStart); weekEnd.setDate(weekEnd.getDate()+6);
+  document.getElementById('periodLabel').textContent =
+    `${weekStart.toLocaleDateString('es-CL',{day:'numeric',month:'short'})} – ${weekEnd.toLocaleDateString('es-CL',{day:'numeric',month:'short',year:'numeric'})}`;
+
+  const days = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(weekStart); d.setDate(d.getDate()+i);
+    days.push(d);
+  }
+
+  const hours = [];
+  for(let h=7;h<=20;h++) hours.push(h);
+
+  let headCols = `<div class="wh-time"></div>`;
+  days.forEach(d => {
+    const isToday = fmtDate(d)===fmtDate(new Date());
+    const dn = d.toLocaleDateString('es-CL',{weekday:'short'}).toUpperCase();
+    const dd = d.getDate();
+    headCols += `<div class="wh-day">
+      <div class="wh-dn">${dn}</div>
+      <div class="wh-dd${isToday?' today':''}">${dd}</div>
+    </div>`;
+  });
+
+  let timeCells = '';
+  hours.forEach(h => {
+    timeCells += `<div class="wb-time-cell"><span>${h}:00</span></div>`;
+  });
+
+  let dayCols = '';
+  days.forEach(d => {
+    const dateStr = fmtDate(d);
+    const dayRecs = reservations.filter(r=>r.date===dateStr && filterMatch(r));
+    let events = '';
+    dayRecs.forEach(r => {
+      const [sh,sm] = r.start.split(':').map(Number);
+      const endTime = r.end || calcEnd(r.start, r.duration||'1 hora');
+      const [eh,em] = endTime.split(':').map(Number);
+      const top    = ((sh-7)*60+sm) * (64/60);
+      const height = ((eh-sh)*60+(em-sm)) * (64/60);
+      const cls    = r.type==='box'?'box':'qx';
+      const label  = r.type==='box' ? r.vet : `${r.patient||''} · ${r.vet}`;
+      const sub    = r.type==='box' ? r.room : r.procedure||'';
+      events += `<div class="wk-ev ${cls}" style="top:${top}px;height:${Math.max(height,22)}px;" onclick="showDetail(${r.id})" title="${label}">
+        <div class="wk-ev-title">${label}</div>
+        <div class="wk-ev-sub">${sub}</div>
+      </div>`;
+    });
+    let hourLines = '';
+    hours.forEach(() => { hourLines += `<div class="wb-hour-line"></div>`; });
+    dayCols += `<div class="wb-day-col">${hourLines}${events}</div>`;
+  });
+
+  c.innerHTML = `<div class="week-container">
+    <div class="week-header-row" style="display:flex;">${headCols}</div>
+    <div class="week-body">
+      <div class="wb-times">${timeCells}</div>
+      <div class="wb-days">${dayCols}</div>
+    </div>
+  </div>`;
+}
+
+/* ────────── Month view ────────── */
+function renderMonth(c){
+  const y = currentDate.getFullYear();
+  const m = currentDate.getMonth();
+  document.getElementById('periodLabel').textContent =
+    new Date(y,m,1).toLocaleDateString('es-CL',{month:'long',year:'numeric'});
+
+  const firstDay = new Date(y,m,1);
+  const lastDay  = new Date(y,m+1,0);
+  const startDow = (firstDay.getDay()+6)%7;
+  const todayStr = fmtDate(new Date());
+
+  let cells = '';
+  const dow = ['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
+  let header = dow.map(d=>`<div class="month-dow">${d}</div>`).join('');
+
+  for(let i=0;i<startDow;i++){
+    const pd = new Date(y,m,1-startDow+i);
+    cells += `<div class="month-cell"><div class="mc-num other-month">${pd.getDate()}</div></div>`;
+  }
+  for(let d=1;d<=lastDay.getDate();d++){
+    const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = dateStr===todayStr;
+    const dayRecs = reservations.filter(r=>r.date===dateStr && filterMatch(r));
+    const shown = dayRecs.slice(0,3);
+    const more  = dayRecs.length-3;
+    let evHtml  = shown.map(r=>{
+      const cls = r.type==='box'?'box':'qx';
+      const lbl = r.type==='box'?r.vet:`${r.patient} · ${r.procedure}`;
+      return `<div class="mc-ev ${cls}" title="${lbl}">${lbl}</div>`;
+    }).join('');
+    if(more>0) evHtml += `<div class="mc-more">+${more} más</div>`;
+    cells += `<div class="month-cell" onclick="jumpDay('${dateStr}')">
+      <div class="mc-num${isToday?' today':''}">${d}</div>
+      ${evHtml}
+    </div>`;
+  }
+  const rem = (startDow+lastDay.getDate())%7;
+  if(rem>0){
+    for(let i=1;i<=7-rem;i++){
+      cells += `<div class="month-cell"><div class="mc-num other-month">${i}</div></div>`;
+    }
+  }
+
+  c.innerHTML = `<div class="month-container">
+    <div class="month-dow-row">${header}</div>
+    <div class="month-grid">${cells}</div>
+  </div>`;
+}
+
+function jumpDay(dateStr){
+  currentDate = new Date(dateStr+'T12:00:00');
+  currentView = 'day';
+  document.querySelectorAll('.view-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+  renderView();
+}
+
+/* ────────── Detail / delete ────────── */
+function showDetail(id){
+  const r = reservations.find(x=>x.id===id);
+  if(!r) return;
+  let msg = r.type==='box'
+    ? `${r.room} · ${r.vet} · ${r.start}–${r.end}`
+    : `${r.patient} · ${r.procedure} · ${r.vet} · ${r.start}`;
+  showToast(msg);
+}
+
+function deleteRes(id){
+  reservations = reservations.filter(r=>r.id!==id);
+  renderView();
+  showToast('Reserva eliminada');
+}
+
+/* ────────── Modals ────────── */
+function openBoxModal(){ openModal('boxModal'); selectedBoxRoom=null; }
+function openQxModal(){  openModal('qxModal');  selectedQxRoom=null; }
+
+function openBoxModalFor(room){
+  openModal('boxModal');
+  const cards = document.querySelectorAll('#boxSelector .room-sel-card');
+  cards.forEach(c => {
+    c.classList.remove('selected','box','qx');
+    if(c.dataset.room===room){ c.classList.add('selected','box'); selectedBoxRoom=room; }
+  });
+}
+function openQxModalFor(room){
+  openModal('qxModal');
+  const cards = document.querySelectorAll('#qxSelector .room-sel-card');
+  cards.forEach(c => {
+    c.classList.remove('selected','box','qx');
+    if(c.dataset.room===room){ c.classList.add('selected','qx'); selectedQxRoom=room; }
+  });
+}
+
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(mo => {
+  mo.addEventListener('click', e => { if(e.target===mo) mo.classList.remove('open'); });
+});
+
+function selectRoom(el, type){
+  const parent = el.closest('.room-selector');
+  parent.querySelectorAll('.room-sel-card').forEach(c => c.classList.remove('selected','box','qx'));
+  el.classList.add('selected',type);
+  if(type==='box') selectedBoxRoom = el.dataset.room;
+  else selectedQxRoom = el.dataset.room;
+}
+
+function selectUrgency(btn, val){
+  document.querySelectorAll('.urgency-pill').forEach(p => p.classList.remove('selected','normal','urgente','programada'));
+  btn.classList.add('selected', val);
+  selectedUrgencyEl = val;
+}
+
+/* ────────── Save ────────── */
+function saveBox(){
+  const vet   = document.getElementById('boxVet').value;
+  const date  = document.getElementById('boxDate').value;
+  const start = document.getElementById('boxTimeStart').value;
+  const end   = document.getElementById('boxTimeEnd').value;
+  const shift = document.getElementById('boxShift').value;
+  const notes = document.getElementById('boxNotes').value;
+  if(!vet||!date||!selectedBoxRoom){
+    showToast('Completa veterinario, fecha y sala'); return;
+  }
+  reservations.push({id:nextId++,type:'box',room:selectedBoxRoom,vet,date,start,end,shift,notes});
+  closeModal('boxModal');
+  renderView();
+  showToast(`Box asignado: ${selectedBoxRoom} · ${vet}`);
+  document.getElementById('boxVet').value='';
+  selectedBoxRoom=null;
+  document.querySelectorAll('#boxSelector .room-sel-card').forEach(c=>c.classList.remove('selected','box','qx'));
+}
+
+function saveQx(){
+  const vet       = document.getElementById('qxVet').value;
+  const date      = document.getElementById('qxDate').value;
+  const start     = document.getElementById('qxTimeStart').value;
+  const duration  = document.getElementById('qxDuration').value;
+  const patient   = document.getElementById('qxPatient').value;
+  const breed     = document.getElementById('qxBreed').value;
+  const owner     = document.getElementById('qxOwner').value;
+  const pid       = document.getElementById('qxId').value;
+  const procedure = document.getElementById('qxProcedure').value;
+  const notes     = document.getElementById('qxNotes').value;
+  const urgency   = selectedUrgencyEl||'programada';
+  if(!vet||!date||!selectedQxRoom||!patient){
+    showToast('Completa cirujano, fecha, pabellón y paciente'); return;
+  }
+  const end = calcEnd(start, duration);
+  reservations.push({id:nextId++,type:'qx',room:selectedQxRoom,vet,date,start,end,patient,breed,owner,pid,procedure,urgency,duration,notes});
+  closeModal('qxModal');
+  renderView();
+  showToast(`Pabellón reservado: ${patient} · ${procedure}`);
+  ['qxVet','qxPatient','qxBreed','qxOwner','qxId','qxNotes'].forEach(id=>document.getElementById(id).value='');
+  selectedQxRoom=null;
+  document.querySelectorAll('#qxSelector .room-sel-card').forEach(c=>c.classList.remove('selected','box','qx'));
+}
+
+/* ────────── Helpers ────────── */
+function fmtDate(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function getWeekStart(d){
+  const clone = new Date(d);
+  const dow   = (clone.getDay()+6)%7;
+  clone.setDate(clone.getDate()-dow);
+  return clone;
+}
+
+function filterMatch(r){
+  if(activeFilter==='all') return true;
+  return r.type === activeFilter;
+}
+
+function calcEnd(start, duration){
+  const [h,m] = start.split(':').map(Number);
+  const mins  = parseDuration(duration);
+  const total = h*60+m+mins;
+  return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+}
+
+function parseDuration(s){
+  if(!s) return 60;
+  if(s.includes('30')) return 30;
+  if(s.includes('45')) return 45;
+  if(s.includes('1.5')) return 90;
+  if(s.includes('2.5')) return 150;
+  if(s.startsWith('2')) return 120;
+  if(s.startsWith('3')) return 180;
+  return 60;
+}
+
+function showToast(msg){
+  const t = document.getElementById('pvToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>

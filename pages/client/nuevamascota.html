@@ -356,7 +356,7 @@
       <a class="sb-link" href="dashboard.html">
         <span class="sb-icon">⊞</span> Dashboard
       </a>
-      <a class="sb-link active" href="mismascotas.html">
+      <a class="sb-link active" href="mascotas.html">
         <span class="sb-icon">🐾</span> Mis Mascotas
         <span class="sb-badge teal">2</span>
       </a>
@@ -369,7 +369,7 @@
       <a class="sb-link" href="miperfil.html">
         <span class="sb-icon">👤</span> Mi Perfil
       </a>
-      <a class="sb-link danger" href="cerrarsesion.html">
+      <a class="sb-link danger" href="../auth/login.html">
         <span class="sb-icon">↩</span> Cerrar sesión
       </a>
     </div>
@@ -475,6 +475,17 @@
           <button class="health-chip" data-estado="En tratamiento" onclick="seleccionarEstado(this)">🩺 En tratamiento</button>
         </div>
         <input type="hidden" id="estadoInput" value="Saludable"/>
+      </div>
+
+      <!-- Animal de Servicio -->
+      <div class="field-group">
+        <label class="field-label">Animal de Servicio</label>
+        <div class="select-wrap">
+          <select class="pv-select" id="servicioInput">
+            <option value="no">No</option>
+            <option value="si">Sí</option>
+          </select>
+        </div>
       </div>
 
       <!-- Notas -->

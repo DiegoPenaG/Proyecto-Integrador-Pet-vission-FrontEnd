@@ -200,6 +200,16 @@
   text-align: center;
 }
 
+.nav-badge {
+  background: #f59e0b;
+  color: white;
+  font-size: 0.58rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 8px;
+  margin-left: auto;
+}
+
 .vet-sidebar-footer {
   padding: 16px 20px;
   border-top: 1px solid rgba(255,255,255,0.1);

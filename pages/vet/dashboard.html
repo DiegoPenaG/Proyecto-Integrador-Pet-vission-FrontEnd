@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>PetVission — Dashboard Veterinario</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
   <style>
     :root {
@@ -30,43 +31,38 @@
  
     /* ══ SIDEBAR ══ */
     .vet-sidebar {
-      width: var(--sidebar-w); height: 100vh; background: var(--sidebar-bg);
-      display: flex; flex-direction: column;
+      width: var(--sidebar-w); height: 100vh;
+      background: linear-gradient(180deg,#085e75 0%,#134e4a 100%);
+      color: white; display: flex; flex-direction: column;
       position: fixed; left: 0; top: 0; z-index: 200;
+      box-shadow: 4px 0 20px rgba(0,0,0,.12);
+      transition: transform .25s ease;
     }
-    .sb-brand {
-      padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,.08);
-      display: flex; align-items: center; gap: 12px;
+    .vet-sidebar-brand { padding:20px 18px 16px; border-bottom:1px solid rgba(255,255,255,.1); }
+    .brand-icon { width:36px; height:36px; background:rgba(255,255,255,.2); border-radius:10px; display:grid; place-items:center; font-size:1rem; }
+    .brand-name { font-family:'Nunito',sans-serif; font-weight:900; font-size:.95rem; letter-spacing:.01em; }
+    .brand-sub  { font-size:.67rem; opacity:.6; margin-top:1px; }
+    .vet-nav { flex:1; padding:12px 10px; display:flex; flex-direction:column; gap:2px; overflow-y:auto; }
+    .vet-nav::-webkit-scrollbar { display:none; }
+    .vet-nav-link {
+      display:flex; align-items:center; gap:10px; padding:9px 12px;
+      border-radius:8px; color:rgba(255,255,255,.7); text-decoration:none;
+      font-size:.8rem; font-weight:600; transition:all .15s;
     }
-    .sb-brand-icon {
-      width: 38px; height: 38px; border-radius: 10px; background: var(--teal);
-      display: grid; place-items: center; color: white; font-size: 1.1rem;
+    .vet-nav-link:hover  { background:rgba(255,255,255,.12); color:white; }
+    .vet-nav-link.active { background:rgba(255,255,255,.18); color:white; box-shadow:inset 0 0 0 1px rgba(255,255,255,.15); }
+    .vet-nav-link i { font-size:1rem; width:18px; text-align:center; }
+    .nav-badge { background:#f59e0b; color:white; font-size:.58rem; font-weight:800; padding:1px 5px; border-radius:8px; margin-left:auto; }
+    .vet-sidebar-footer { padding:14px 16px; border-top:1px solid rgba(255,255,255,.1); }
+    .vet-avatar { width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.25); display:grid; place-items:center; font-size:.75rem; font-weight:800; color:white; flex-shrink:0; }
+    .footer-name  { font-size:.78rem; font-weight:700; color:white; }
+    .footer-email { font-size:.65rem; opacity:.55; color:white; }
+    .vet-sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:99; }
+    @media(max-width:768px){
+      .vet-sidebar { transform:translateX(-100%); }
+      .vet-sidebar.open { transform:translateX(0); }
+      .vet-sidebar-overlay.open { display:block; }
     }
-    .sb-brand-name { font-family:'Nunito',sans-serif; font-weight:900; font-size:.98rem; color:white; line-height:1.1; }
-    .sb-brand-sub  { font-size:.67rem; color:rgba(255,255,255,.45); }
-    .sb-nav { flex:1; padding:16px 12px; display:flex; flex-direction:column; gap:2px; }
-    .sb-link {
-      display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:9px;
-      color:rgba(255,255,255,.6); font-size:.88rem; font-weight:600;
-      text-decoration:none; cursor:pointer; transition:all .18s;
-    }
-    .sb-link:hover  { background:rgba(255,255,255,.08); color:white; }
-    .sb-link.active { background:var(--teal); color:white; }
-    .sb-icon { font-size:1rem; width:20px; text-align:center; flex-shrink:0; }
-    .sb-footer { padding:16px 20px; border-top:1px solid rgba(255,255,255,.08); }
-    .sb-user { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
-    .sb-av {
-      width:36px; height:36px; border-radius:50%; background:var(--teal-mid);
-      color:var(--teal-dark); display:grid; place-items:center;
-      font-family:'Nunito',sans-serif; font-weight:900; font-size:.8rem;
-    }
-    .sb-uname  { font-size:.82rem; font-weight:700; color:white; }
-    .sb-uemail { font-size:.67rem; color:rgba(255,255,255,.4); }
-    .sb-logout {
-      display:flex; align-items:center; gap:8px; color:rgba(255,255,255,.5);
-      font-size:.8rem; font-weight:600; background:none; border:none; cursor:pointer; padding:6px 4px; transition:color .15s;
-    }
-    .sb-logout:hover { color:var(--red); }
  
     /* ══ MAIN ══ */
     .main-wrap { margin-left:var(--sidebar-w); flex:1; display:flex; flex-direction:column; min-height:100vh; }
@@ -395,39 +391,40 @@
 <body>
  
 <!-- ══ SIDEBAR ══ -->
-<aside class="vet-sidebar">
-  <div class="sb-brand">
-    <div class="sb-brand-icon">🏥</div>
-    <div>
-      <div class="sb-brand-name">PetVission</div>
-      <div class="sb-brand-sub">Gestión Veterinaria</div>
+<aside class="vet-sidebar" id="vetSidebar">
+  <div class="vet-sidebar-brand">
+    <div class="d-flex align-items-center gap-2">
+      <div class="brand-icon"><i class="bi bi-heart-pulse-fill"></i></div>
+      <div>
+        <div class="brand-name">PetVission</div>
+        <div class="brand-sub">Gestión Veterinaria</div>
+      </div>
     </div>
   </div>
-  <nav class="sb-nav">
-    <a class="sb-link" href="dashboard.html"><span class="sb-icon">🏠</span> Inicio</a>
-    <a class="sb-link" href="horario.html"><span class="sb-icon">📅</span> Mi Horario</a>
-    <a class="sb-link active" href="pacientes.html"><span class="sb-icon">👥</span> Mis Pacientes</a>
-    <a class="sb-link" href="historial.html"><span class="sb-icon">🗂️</span> Historial Clínico</a>
-    <a class="sb-link" href="inventario.html"><span class="sb-icon">📦</span> Inventario</a>
+  <nav class="vet-nav">
+    <a href="dashboard.html" class="vet-nav-link active"><i class="bi bi-house-fill"></i><span>Inicio</span></a>
+    <a href="horario.html" class="vet-nav-link"><i class="bi bi-calendar3-week-fill"></i><span>Mi Horario</span></a>
+    <a href="pacientes.html" class="vet-nav-link"><i class="bi bi-people-fill"></i><span>Mis Pacientes</span><span class="nav-badge">4</span></a>
+    <a href="historial.html" class="vet-nav-link"><i class="bi bi-clipboard2-pulse-fill"></i><span>Historial Clínico</span></a>
+    <a href="inventario.html" class="vet-nav-link"><i class="bi bi-box-seam-fill"></i><span>Inventario</span></a>
+    <a href="vetprofile.html" class="vet-nav-link">👤<span>Mi perfil</span><span class="nav-badge">2</span></a>
   </nav>
-  <div class="sb-footer">
-    <div class="sb-user">
-      <div class="sb-av">DV</div>
+  <div class="vet-sidebar-footer">
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <div class="vet-avatar">DV</div>
       <div>
-        <div class="sb-uname">Dr. Veterinario</div>
-        <div class="sb-uemail">veterinario@petvission.cl</div>
+        <div class="footer-name">Dr. Veterinario</div>
+        <div class="footer-email">veterinario@petvission.cl</div>
       </div>
-      
     </div>
-    <button class="sb-logout">↩ Cerrar Sesión</button><a href="../../index.html" class="vet-nav-link px-0">
-        <i class="bi bi-box-arrow-right"></i>
-        <span>Cerrar Sesión</span>
-      </a>
+    <a href="../../index.html" class="vet-nav-link px-0" style="padding:7px 0!important;">
+      <i class="bi bi-box-arrow-right"></i><span>Cerrar Sesión</span>
+    </a>
   </div>
 </aside>
 
-  <!-- Overlay mobile -->
-  <div class="vet-sidebar-overlay" id="vetOverlay" onclick="toggleSidebar()"></div>
+<!-- Overlay mobile -->
+<div class="vet-sidebar-overlay" id="vetOverlay" onclick="toggleSidebar()"></div>
  
 <!-- ══ MAIN ══ -->
 <div class="main-wrap">
@@ -474,9 +471,6 @@
       <div class="appts-card">
         <div class="appts-hdr">
           <h6>Reserva del Día</h6>
-          <div class="d-flex gap-2">
-            <button class="btn-cal">📅 Vista Calendario</button>
-          </div>
         </div>
  
         <!-- Filters -->
@@ -607,6 +601,11 @@
  
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+function toggleSidebar(){
+  document.getElementById('vetSidebar').classList.toggle('open');
+  document.getElementById('vetOverlay').classList.toggle('open');
+}
+
 /* ══ DATA ══ */
 const RESERVA = [
   { id:1, hora:'09:00', emoji:'🐱', nombre:'Luna',  dueno:'María García', servicio:'Consulta General', doctor:'Dr. Ramírez', status:'confirmada' },
