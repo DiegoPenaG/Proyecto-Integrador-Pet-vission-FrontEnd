@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PetVission — Gestión de Turnos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="../../assets/css/admin.css" rel="stylesheet" />
+  <style>
+    /* ── TURNOS PAGE EXTRAS ── */
+    html, body { height: 100%; overflow: hidden; }
+    body { font-family: 'DM Sans', sans-serif; }
+
+    .admin-layout { height: 100vh; overflow: hidden; }
+    .admin-main   { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Toolbar below topbar */
+    .turnos-toolbar {
+      background: #fff;
+      border-bottom: 1px solid var(--admin-border);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .btn-hoy {
+      border: 1.5px solid var(--admin-border);
+      background: white;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: .78rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--admin-text);
+      transition: all .15s;
+      font-family: inherit;
+    }
+    .btn-hoy:hover { background: #f8fafc; }
+    .cal-nav { display: flex; gap: 2px; }
+    .cal-nav button {
+      border: none; background: none; cursor: pointer;
+      color: var(--admin-muted); font-size: 1rem;
+      padding: 5px 10px; border-radius: 6px; transition: all .15s;
+    }
+    .cal-nav button:hover { background: #f1f5f9; color: var(--admin-text); }
+    .cal-title {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800; font-size: 1rem; color: var(--admin-text);
+    }
+    .toolbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .view-toggle {
+      display: flex;
+      border: 1.5px solid var(--admin-border);
+      border-radius: 8px; overflow: hidden;
+    }
+    .view-btn {
+      border: none; background: white;
+      padding: 5px 14px; font-size: .75rem; font-weight: 700;
+      cursor: pointer; color: var(--admin-muted); transition: all .15s;
+      font-family: inherit;
+    }
+    .view-btn.active { background: var(--admin-primary); color: white; }
+    .btn-add-turno {
+      background: var(--admin-primary); color: white;
+      border: none; border-radius: 8px;
+      padding: 7px 15px; font-size: .78rem; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+      transition: background .15s; font-family: inherit;
+    }
+    .btn-add-turno:hover { background: #6b21a8; }
+
+    /* ── CAL AREA ── */
+    .cal-scroll { flex: 1; overflow: auto; }
+    .cal-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .cal-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 3px; }
+
+    /* ── DAY VIEW ── */
+    .day-header {
+      display: flex; position: sticky; top: 0; z-index: 10;
+      background: white; border-bottom: 1px solid #e2e8f0;
+    }
+    .time-gutter {
+      width: 68px; flex-shrink: 0;
+      border-right: 1px solid #e2e8f0;
+    }
+    .day-col-header {
+      flex: 1; text-align: center;
+      padding: 10px 4px; border-right: 1px solid #e2e8f0;
+    }
+    .day-col-header .dc-name {
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--admin-muted);
+    }
+    .day-col-header .dc-num {
+      font-family: 'Nunito', sans-serif; font-weight: 800;
+      font-size: 1.2rem; color: var(--admin-text); line-height: 1.1; margin-top: 2px;
+    }
+    .day-col-header.today .dc-num {
+      background: var(--admin-primary); color: white;
+      width: 34px; height: 34px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+
+    /* Shared body */
+    .cal-body { display: flex; }
+    .times-col { width: 68px; flex-shrink: 0; border-right: 1px solid #e2e8f0; }
+    .time-row {
+      height: 60px; border-bottom: 1px solid #f1f5f9;
+      display: flex; align-items: flex-start;
+      justify-content: center; padding-top: 4px;
+    }
+    .time-label { font-size: .67rem; color: #94a3b8; font-weight: 700; }
+
+    .day-cols { flex: 1; display: flex; }
+    .day-col { flex: 1; border-right: 1px solid #e2e8f0; position: relative; }
+    .day-col:last-child { border-right: none; }
+    .hour-cell { height: 60px; border-bottom: 1px solid #f1f5f9; }
+    .hour-cell:hover { background: rgba(126,34,206,.03); }
+
+    /* ── WEEK VIEW (7 cols) ── */
+    .week-grid { display: flex; min-height: 900px; }
+
+    /* ── MONTH VIEW ── */
+    .month-header-row {
+      display: grid; grid-template-columns: repeat(7,1fr);
+      border-bottom: 1px solid #e2e8f0;
+      background: white; position: sticky; top: 0; z-index: 5;
+    }
+    .month-day-name {
+      text-align: center; padding: 8px;
+      font-size: .7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em;
+      color: var(--admin-muted);
+    }
+    .month-body {
+      display: grid; grid-template-columns: repeat(7,1fr);
+      grid-auto-rows: minmax(100px,1fr);
+    }
+    .month-cell {
+      border-right: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 5px; overflow: hidden; cursor: pointer;
+      transition: background .1s;
+    }
+    .month-cell:hover { background: #faf5ff; }
+    .month-cell:nth-child(7n) { border-right: none; }
+    .mc-num {
+      font-size: .78rem; font-weight: 700; color: var(--admin-text);
+      width: 26px; height: 26px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; margin-bottom: 3px;
+    }
+    .mc-num.today-num { background: var(--admin-primary); color: white; }
+    .mc-num.other-month { color: #cbd5e1; }
+    .month-ev {
+      font-size: .66rem; font-weight: 700;
+      padding: 2px 6px; border-radius: 4px;
+      margin-bottom: 2px; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+    }
+    .month-ev:hover { filter: brightness(.93); }
+
+    /* ── SHIFT EVENTS ── */
+    .shift-ev {
+      position: absolute; left: 4px; right: 4px;
+      border-radius: 7px; padding: 5px 8px;
+      cursor: pointer; z-index: 5; overflow: hidden;
+      transition: transform .1s, box-shadow .1s;
+    }
+    .shift-ev:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.12); z-index: 10; }
+    .shift-ev .ev-vet { font-weight: 700; font-size: .74rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .shift-ev .ev-info { font-size: .65rem; opacity: .85; margin-top: 1px; }
+
+    /* Colour variants */
+    .ev-purple { background: #ede9fe; color: #5b21b6; border-left: 3px solid #8b5cf6; }
+    .ev-teal   { background: #ccfbf1; color: #0d6e63; border-left: 3px solid #14b8a6; }
+    .ev-amber  { background: #fef3c7; color: #92400e; border-left: 3px solid #f59e0b; }
+    .ev-pink   { background: #fce7f3; color: #9d174d; border-left: 3px solid #f472b6; }
+    .ev-sky    { background: #e0f2fe; color: #075985; border-left: 3px solid #38bdf8; }
+    .ev-green  { background: #dcfce7; color: #14532d; border-left: 3px solid #22c55e; }
+
+    /* ── MODAL OVERLAY base ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45); z-index: 800;
+      display: none; align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+
+    /* ── MODAL BOX ── */
+    .mbox {
+      background: white; border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.2);
+      width: 480px; max-width: 95vw;
+      max-height: 92vh; overflow-y: auto;
+      animation: popIn .18s ease-out;
+    }
+    .mbox::-webkit-scrollbar { width: 4px; }
+    .mbox::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+    @keyframes popIn { from { opacity:0; transform:scale(.95) } to { opacity:1; transform:scale(1) } }
+
+    .mbox-head {
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .mbox-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0;
+    }
+    .mbox-head h5 { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 1rem; margin: 0; flex: 1; color: #1e293b; }
+    .mbox-close {
+      background: none; border: none; color: #94a3b8;
+      font-size: 1.1rem; cursor: pointer; padding: 4px 6px;
+      border-radius: 6px; transition: all .15s; line-height: 1;
+    }
+    .mbox-close:hover { background: #f1f5f9; color: #1e293b; }
+
+    .mbox-body { padding: 20px 22px; }
+    .mbox-footer {
+      padding: 14px 22px;
+      border-top: 1px solid #e2e8f0;
+      background: #f8fafc;
+      display: flex; gap: 8px; justify-content: flex-end;
+      border-radius: 0 0 16px 16px;
+    }
+
+    /* Form helpers */
+    .field-label {
+      display: block; font-size: .72rem; font-weight: 700;
+      color: #1e293b; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px;
+    }
+    .field-input {
+      width: 100%; border: 1.5px solid #e2e8f0; border-radius: 8px;
+      padding: 8px 11px; font-family: inherit; font-size: .83rem;
+      color: #1e293b; background: white; transition: border-color .15s;
+    }
+    .field-input:focus { outline: none; border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139,92,246,.1); }
+    .field-group { margin-bottom: 14px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* Buttons */
+    .btn-cancel {
+      background: white; border: 1.5px solid #e2e8f0; border-radius: 8px;
+      padding: 8px 18px; font-size: .8rem; font-weight: 700;
+      cursor: pointer; color: #64748b; font-family: inherit; transition: all .15s;
+    }
+    .btn-cancel:hover { background: #f1f5f9; }
+    .btn-primary-action {
+      background: var(--admin-primary); color: white; border: none;
+      border-radius: 8px; padding: 8px 20px; font-size: .8rem;
+      font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s;
+    }
+    .btn-primary-action:hover { background: #6b21a8; }
+    .btn-success-action {
+      background: #16a34a; color: white; border: none;
+      border-radius: 8px; padding: 8px 20px; font-size: .8rem;
+      font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s;
+    }
+    .btn-success-action:hover { background: #15803d; }
+    .btn-danger-action {
+      background: #dc2626; color: white; border: none;
+      border-radius: 8px; padding: 8px 20px; font-size: .8rem;
+      font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s;
+    }
+    .btn-danger-action:hover { background: #b91c1c; }
+
+    /* Toast */
+    .pv-toast {
+      position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b; color: white;
+      padding: 10px 24px; border-radius: 24px;
+      font-size: .82rem; font-weight: 700;
+      z-index: 9999; box-shadow: 0 4px 16px rgba(0,0,0,.2);
+      transition: opacity .3s; pointer-events: none;
+    }
+
+    /* Day tab for day-view selector in sidebar */
+    .day-vet-filter { display: flex; gap: 6px; flex-wrap: wrap; padding: 12px 0 0; }
+    .dv-chip {
+      border: 1.5px solid #e2e8f0; background: white;
+      border-radius: 6px; padding: 4px 10px; font-size: .72rem;
+      font-weight: 700; cursor: pointer; color: #64748b;
+      transition: all .15s; font-family: inherit;
+    }
+    .dv-chip.active { border-color: var(--admin-primary); color: var(--admin-primary); background: #faf5ff; }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+
+  <!-- ════ SIDEBAR ════ -->
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="admin-sidebar-brand">
+      <div class="d-flex align-items-center gap-2">
+        <div class="brand-icon"><i class="bi bi-heart-pulse-fill"></i></div>
+        <div>
+          <div class="fw-bold">PetVission</div>
+          <div style="font-size:.72rem;opacity:.7;">Panel Administrador</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="admin-nav">
+      <div class="admin-nav-label">Principal</div>
+      <a href="dashboard.html" class="admin-nav-link">
+        <i class="bi bi-grid-fill"></i><span>Inicio</span>
+      </a>
+      <div class="admin-nav-label mt-3">Gestión</div>
+      <a href="usuarios.html" class="admin-nav-link">
+        <i class="bi bi-people-fill"></i><span>Usuarios</span>
+      </a>
+      <a href="turnos.html" class="admin-nav-link active">
+        <i class="bi bi-calendar-week-fill"></i><span>Turnos</span>
+      </a>
+      <a href="reservas.html" class="admin-nav-link">
+        <i class="bi bi-paw-fill"></i><span>Reserva de salas</span>
+      </a>  
+      <a href="inventario.html" class="admin-nav-link">
+        <i class="bi bi-box-seam-fill"></i><span>Inventario</span>
+      </a>
+      <div class="admin-nav-label mt-3">Sistema</div>
+      <a href="reportes.html" class="admin-nav-link">
+        <i class="bi bi-bar-chart-fill"></i><span>Reportes</span>
+      </a>
+      <a href="configuracion.html" class="admin-nav-link">
+        <i class="bi bi-gear-fill"></i><span>Configuración</span>
+      </a>
+    </nav>
+
+    <div class="admin-sidebar-footer">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <div class="admin-avatar">AD</div>
+        <div>
+          <div class="fw-semibold small">Administrador</div>
+          <div style="font-size:.72rem;opacity:.7;">admin@petvission.cl</div>
+        </div>
+      </div>
+      <a href="../../index.html" class="admin-nav-link px-0">
+        <i class="bi bi-box-arrow-right"></i><span>Cerrar Sesión</span>
+      </a>
+    </div>
+  </aside>
+
+  <div class="admin-sidebar-overlay" id="adminOverlay" onclick="toggleSidebar()"></div>
+
+  <!-- ════ MAIN ════ -->
+  <div class="admin-main">
+
+    <!-- TOPBAR -->
+    <div class="admin-topbar">
+      <button class="btn btn-sm border-0 d-lg-none me-2" onclick="toggleSidebar()">
+        <i class="bi bi-list fs-4"></i>
+      </button>
+      <div>
+        <h5 class="fw-bold mb-0">Gestión de Turnos</h5>
+        <small class="text-muted" id="fechaHoy"></small>
+      </div>
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <button class="btn btn-light rounded-circle position-relative p-2">
+          <i class="bi bi-bell fs-5"></i>
+          <span class="position-absolute top-0 end-0 badge rounded-pill bg-danger" style="font-size:.6rem;">3</span>
+        </button>
+        <div class="admin-avatar-sm">AD</div>
+      </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="turnos-toolbar">
+      <button class="btn-hoy" onclick="goToday()">Hoy</button>
+      <div class="cal-nav">
+        <button onclick="navPrev()"><i class="bi bi-chevron-left"></i></button>
+        <button onclick="navNext()"><i class="bi bi-chevron-right"></i></button>
+      </div>
+      <span class="cal-title" id="calTitle"></span>
+      <div class="toolbar-right">
+        <div class="view-toggle">
+          <button class="view-btn active" id="btnDay"   onclick="setView('day')">Día</button>
+          <button class="view-btn"        id="btnWeek"  onclick="setView('week')">Semana</button>
+          <button class="view-btn"        id="btnMonth" onclick="setView('month')">Mes</button>
+        </div>
+        <button class="btn-add-turno" onclick="openNuevoTurno()">
+          <i class="bi bi-plus-lg"></i> Nuevo Turno
+        </button>
+      </div>
+    </div>
+
+    <!-- CALENDAR AREA -->
+    <div class="cal-scroll" id="calArea"></div>
+
+  </div><!-- /admin-main -->
+</div><!-- /admin-layout -->
+
+<!-- ══════════════════════════════════════
+     MODAL 1 — NUEVO TURNO
+══════════════════════════════════════ -->
+<div class="modal-overlay" id="modalNuevoTurno" onclick="closeBg(event,'modalNuevoTurno')">
+  <div class="mbox">
+    <div class="mbox-head">
+      <div class="mbox-icon" style="background:#ede9fe;">
+        <i class="bi bi-calendar-plus-fill" style="color:#7e22ce;"></i>
+      </div>
+      <h5>Asignar Nuevo Turno</h5>
+      <button class="mbox-close" onclick="closeModal('modalNuevoTurno')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="mbox-body">
+
+      <div class="field-group">
+        <label class="field-label">Veterinario</label>
+        <select class="field-input" id="nt-vet">
+          <option value="">— Seleccionar veterinario —</option>
+          <option value="dv">Dr. Veterinario</option>
+          <option value="dg">Dr. García</option>
+          <option value="dr">Dra. Reyes</option>
+          <option value="dm">Dr. Molina</option>
+          <option value="dc">Dra. Castro</option>
+        </select>
+      </div>
+
+      <div class="field-row field-group">
+        <div>
+          <label class="field-label">Fecha</label>
+          <input class="field-input" type="date" id="nt-fecha" />
+        </div>
+        <div>
+          <label class="field-label">Box / Sala</label>
+          <select class="field-input" id="nt-box">
+            <option value="">— Seleccionar —</option>
+            <option>Box 1 — Consulta general</option>
+            <option>Box 2 — Cirugía menor</option>
+            <option>Box 3 — Urgencias</option>
+            <option>Sala A — Vacunación</option>
+            <option>Sala B — Diagnóstico</option>
+            <option>Sala C — Rehabilitación</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row field-group">
+        <div>
+          <label class="field-label">Hora inicio</label>
+          <input class="field-input" type="time" id="nt-inicio" value="08:00" />
+        </div>
+        <div>
+          <label class="field-label">Hora fin</label>
+          <input class="field-input" type="time" id="nt-fin" value="14:00" />
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Tipo de turno</label>
+        <select class="field-input" id="nt-tipo">
+          <option>Turno mañana</option>
+          <option>Turno tarde</option>
+          <option>Turno noche</option>
+          <option>Turno completo</option>
+          <option>Guardia</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Notas (opcional)</label>
+        <textarea class="field-input" id="nt-notas" rows="2"
+          placeholder="Indicaciones especiales para este turno…"
+          style="resize:none;"></textarea>
+      </div>
+
+      <!-- Color del turno -->
+      <div class="field-group">
+        <label class="field-label">Color en calendario</label>
+        <div style="display:flex;gap:8px;margin-top:4px;" id="nt-colorPicker">
+          <div class="cp-dot active" data-color="ev-purple" style="background:#8b5cf6;"
+               onclick="selectNtColor(this)" title="Morado"></div>
+          <div class="cp-dot" data-color="ev-teal" style="background:#14b8a6;"
+               onclick="selectNtColor(this)" title="Teal"></div>
+          <div class="cp-dot" data-color="ev-amber" style="background:#f59e0b;"
+               onclick="selectNtColor(this)" title="Ámbar"></div>
+          <div class="cp-dot" data-color="ev-pink" style="background:#f472b6;"
+               onclick="selectNtColor(this)" title="Rosa"></div>
+          <div class="cp-dot" data-color="ev-sky" style="background:#38bdf8;"
+               onclick="selectNtColor(this)" title="Celeste"></div>
+          <div class="cp-dot" data-color="ev-green" style="background:#22c55e;"
+               onclick="selectNtColor(this)" title="Verde"></div>
+        </div>
+      </div>
+    </div>
+    <div class="mbox-footer">
+      <button class="btn-cancel" onclick="closeModal('modalNuevoTurno')">Cancelar</button>
+      <button class="btn-primary-action" onclick="guardarTurno()">
+        <i class="bi bi-check-lg me-1"></i>Guardar turno
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ══════════ CONSTANTS ══════════ */
+const TODAY = new Date();
+TODAY.setHours(0,0,0,0);
+
+const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DAYS_ES   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+const VETS = [
+  {id:'dv', name:'Dr. Veterinario', initials:'DV', color:'#7c3aed'},
+  {id:'dg', name:'Dr. García',      initials:'DG', color:'#0f766e'},
+  {id:'dr', name:'Dra. Reyes',      initials:'DR', color:'#db2777'},
+  {id:'dm', name:'Dr. Molina',      initials:'DM', color:'#1d4ed8'},
+  {id:'dc', name:'Dra. Castro',     initials:'DC', color:'#b45309'},
+];
+
+const HOURS     = Array.from({length:15},(_,i)=>i+7); // 07:00 – 21:00
+const H_PX      = 60;
+const START_H   = 7;
+
+/* ══════════ STATE ══════════ */
+let currentDate  = new Date(TODAY);
+let currentView  = 'day';
+let ntColor      = 'ev-purple';
+
+/* ── Shift events ── */
+let SHIFTS = [
+  {id:1, vet:'dv', date:ds(0), startH:8,  endH:14, box:'Box 1 — Consulta general', tipo:'Turno mañana',  color:'ev-purple'},
+  {id:2, vet:'dg', date:ds(0), startH:8,  endH:16, box:'Box 2 — Cirugía menor',    tipo:'Turno completo',color:'ev-teal'},
+  {id:3, vet:'dr', date:ds(0), startH:14, endH:20, box:'Sala A — Vacunación',      tipo:'Turno tarde',   color:'ev-pink'},
+  {id:4, vet:'dm', date:ds(1), startH:8,  endH:14, box:'Box 3 — Urgencias',        tipo:'Turno mañana',  color:'ev-sky'},
+  {id:5, vet:'dc', date:ds(1), startH:14, endH:20, box:'Sala B — Diagnóstico',     tipo:'Turno tarde',   color:'ev-amber'},
+  {id:6, vet:'dv', date:ds(2), startH:9,  endH:17, box:'Box 1 — Consulta general', tipo:'Turno completo',color:'ev-purple'},
+  {id:7, vet:'dg', date:ds(-1),startH:8,  endH:14, box:'Box 2 — Cirugía menor',    tipo:'Turno mañana',  color:'ev-teal'},
+  {id:8, vet:'dr', date:ds(3), startH:8,  endH:14, box:'Sala A — Vacunación',      tipo:'Guardia',       color:'ev-green'},
+];
+
+/* ══════════ HELPERS ══════════ */
+function ds(offset){
+  const d = new Date(TODAY);
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().slice(0,10);
+}
+function dateToStr(d){ return d.toISOString().slice(0,10); }
+function getVet(id){ return VETS.find(v=>v.id===id)||{name:'?',initials:'?',color:'#888'}; }
+function fmtDate(str){
+  const [y,m,d]=str.split('-');
+  return `${d}/${m}/${y}`;
+}
+function fmtH(h){
+  const hh=Math.floor(h), mm=Math.round((h-hh)*60);
+  return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+}
+function weekStart(d){
+  const day=d.getDay(), diff=day===0?-6:1-day;
+  const ws=new Date(d); ws.setDate(d.getDate()+diff); ws.setHours(0,0,0,0); return ws;
+}
+
+/* ══════════ RENDER CALENDAR ══════════ */
+function render(){
+  const area = document.getElementById('calArea');
+  area.innerHTML = '';
+  if(currentView==='day')   renderDay(area);
+  else if(currentView==='week') renderWeek(area);
+  else renderMonth(area);
+}
+
+/* ── DAY VIEW ── */
+function renderDay(area){
+  const ds = dateToStr(currentDate);
+  const isToday = ds === dateToStr(TODAY);
+  const dayName = DAYS_ES[currentDate.getDay()];
+  document.getElementById('calTitle').textContent =
+    `${dayName} ${currentDate.getDate()} de ${MONTHS_ES[currentDate.getMonth()]} de ${currentDate.getFullYear()}`;
+
+  /* Header */
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'display:flex;position:sticky;top:0;z-index:10;background:white;border-bottom:1px solid #e2e8f0;';
+  hdr.innerHTML = `<div style="width:68px;flex-shrink:0;border-right:1px solid #e2e8f0;"></div>
+    <div style="flex:1;text-align:center;padding:10px 4px;">
+      <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748b;">${dayName}</div>
+      <div class="${isToday?'today-num mc-num':'mc-num'}" style="margin:4px auto 0;font-family:'Nunito',sans-serif;font-weight:800;font-size:1.3rem;">
+        ${currentDate.getDate()}
+      </div>
+    </div>`;
+  area.appendChild(hdr);
+
+  /* Body */
+  const body = document.createElement('div');
+  body.style.cssText = 'display:flex;min-height:'+(HOURS.length*H_PX)+'px;';
+
+  /* Times */
+  const timesCol = timesColumn();
+  body.appendChild(timesCol);
+
+  /* Single day column */
+  const col = document.createElement('div');
+  col.style.cssText = 'flex:1;position:relative;min-height:'+(HOURS.length*H_PX)+'px;';
+  HOURS.forEach(()=>{
+    const cell=document.createElement('div');
+    cell.style.cssText=`height:${H_PX}px;border-bottom:1px solid #f1f5f9;`;
+    col.appendChild(cell);
+  });
+  SHIFTS.filter(s=>s.date===ds).forEach(s=>col.appendChild(buildShiftEl(s)));
+  body.appendChild(col);
+  area.appendChild(body);
+}
+
+/* ── WEEK VIEW ── */
+function renderWeek(area){
+  const ws = weekStart(currentDate);
+  const days = Array.from({length:7},(_,i)=>{const d=new Date(ws);d.setDate(ws.getDate()+i);return d;});
+  const last = days[6];
+  document.getElementById('calTitle').textContent =
+    `${MONTHS_ES[ws.getMonth()]} ${ws.getDate()} – ${last.getDate()} ${ws.getMonth()!==last.getMonth()?'de '+MONTHS_ES[last.getMonth()]:''} ${ws.getFullYear()}`;
+
+  /* Header */
+  const hdr = document.createElement('div');
+  hdr.style.cssText='display:flex;position:sticky;top:0;z-index:10;background:white;border-bottom:1px solid #e2e8f0;';
+  hdr.innerHTML='<div style="width:68px;flex-shrink:0;border-right:1px solid #e2e8f0;"></div>'+
+    days.map(d=>{
+      const isT = dateToStr(d)===dateToStr(TODAY);
+      return `<div style="flex:1;text-align:center;padding:10px 4px;border-right:1px solid #e2e8f0;cursor:pointer;"
+                   onclick="jumpToDay('${dateToStr(d)}')">
+        <div style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#64748b;">${DAYS_ES[d.getDay()]}</div>
+        <div class="${isT?'today-num mc-num':'mc-num'}" style="margin:4px auto 0;font-family:'Nunito',sans-serif;font-weight:800;font-size:1.1rem;">${d.getDate()}</div>
+      </div>`;
+    }).join('');
+  area.appendChild(hdr);
+
+  /* Body */
+  const body=document.createElement('div');
+  body.style.cssText='display:flex;min-height:'+(HOURS.length*H_PX)+'px;';
+  body.appendChild(timesColumn());
+
+  days.forEach(d=>{
+    const dStr=dateToStr(d);
+    const col=document.createElement('div');
+    col.style.cssText=`flex:1;border-right:1px solid #e2e8f0;position:relative;min-height:${HOURS.length*H_PX}px;`;
+    HOURS.forEach(()=>{const c=document.createElement('div');c.style.cssText=`height:${H_PX}px;border-bottom:1px solid #f1f5f9;`;col.appendChild(c);});
+    SHIFTS.filter(s=>s.date===dStr).forEach(s=>col.appendChild(buildShiftEl(s)));
+    body.appendChild(col);
+  });
+  area.appendChild(body);
+}
+
+/* ── MONTH VIEW ── */
+function renderMonth(area){
+  const year=currentDate.getFullYear(), month=currentDate.getMonth();
+  document.getElementById('calTitle').textContent=`${MONTHS_ES[month]} ${year}`;
+
+  area.style.display='flex'; area.style.flexDirection='column';
+
+  /* Day names */
+  const hdr=document.createElement('div');
+  hdr.style.cssText='display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid #e2e8f0;background:white;position:sticky;top:0;z-index:5;';
+  ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].forEach(n=>{
+    hdr.innerHTML+=`<div class="month-day-name">${n}</div>`;
+  });
+  area.appendChild(hdr);
+
+  /* Grid */
+  const grid=document.createElement('div');
+  grid.className='month-body';
+
+  const firstDay=new Date(year,month,1).getDay();
+  const startOffset=firstDay===0?6:firstDay-1;
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const prevDays=new Date(year,month,0).getDate();
+  const cells=[];
+  for(let i=startOffset-1;i>=0;i--) cells.push({day:prevDays-i,cur:false,dStr:`${year}-${String(month).padStart(2,'0')}-${String(prevDays-i).padStart(2,'0')}`});
+  for(let d=1;d<=daysInMonth;d++) cells.push({day:d,cur:true,dStr:`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`});
+  const rem=(7-cells.length%7)%7;
+  for(let d=1;d<=rem;d++) cells.push({day:d,cur:false,dStr:`${year+Math.floor((month+2)/12)}-${String((month+1)%12+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`});
+
+  cells.forEach(c=>{
+    const cell=document.createElement('div');
+    cell.className='month-cell';
+    const isTod=c.cur&&c.dStr===dateToStr(TODAY);
+    const numClass=`mc-num${isTod?' today-num':''}${!c.cur?' other-month':''}`;
+    cell.innerHTML=`<div class="${numClass}">${c.day}</div>`;
+    const dayShifts=SHIFTS.filter(s=>s.date===c.dStr).slice(0,3);
+    dayShifts.forEach(s=>{
+      const vet=getVet(s.vet);
+      const evEl=document.createElement('div');
+      evEl.className=`month-ev ${s.color}`;
+      evEl.textContent=`${vet.name} · ${s.box.split('—')[0].trim()}`;
+      cell.appendChild(evEl);
+    });
+    const more=SHIFTS.filter(s=>s.date===c.dStr).length-3;
+    if(more>0) cell.innerHTML+=`<div style="font-size:.64rem;color:#94a3b8;padding:1px 4px;">+${more} más</div>`;
+    cell.ondblclick=()=>jumpToDay(c.dStr);
+    grid.appendChild(cell);
+  });
+  area.appendChild(grid);
+}
+
+/* ── Shared times column ── */
+function timesColumn(){
+  const col=document.createElement('div');
+  col.style.cssText='width:68px;flex-shrink:0;border-right:1px solid #e2e8f0;';
+  HOURS.forEach(h=>{
+    const row=document.createElement('div');
+    row.style.cssText=`height:${H_PX}px;border-bottom:1px solid #f1f5f9;display:flex;align-items:flex-start;justify-content:center;padding-top:4px;`;
+    row.innerHTML=`<span style="font-size:.67rem;color:#94a3b8;font-weight:700;">${String(h).padStart(2,'0')}:00</span>`;
+    col.appendChild(row);
+  });
+  return col;
+}
+
+/* ── Build shift event element ── */
+function buildShiftEl(s){
+  const vet=getVet(s.vet);
+  const top=(s.startH-START_H)*H_PX;
+  const height=(s.endH-s.startH)*H_PX-4;
+  const el=document.createElement('div');
+  el.className=`shift-ev ${s.color}`;
+  el.style.cssText=`top:${top}px;height:${height}px;`;
+  el.innerHTML=`<div class="ev-vet"><i class="bi bi-person-fill me-1" style="font-size:.6rem;"></i>${vet.name}</div>
+    <div class="ev-info"><i class="bi bi-door-open me-1"></i>${s.box}</div>
+    <div class="ev-info"><i class="bi bi-clock me-1"></i>${fmtH(s.startH)} – ${fmtH(s.endH)}</div>`;
+  return el;
+}
+
+/* ══════════ NAVIGATION ══════════ */
+function goToday(){ currentDate=new Date(TODAY); render(); }
+function jumpToDay(dStr){
+  currentDate=new Date(dStr+'T12:00:00');
+  setView('day');
+}
+function navPrev(){
+  if(currentView==='day')   currentDate.setDate(currentDate.getDate()-1);
+  else if(currentView==='week') currentDate.setDate(currentDate.getDate()-7);
+  else currentDate.setMonth(currentDate.getMonth()-1);
+  render();
+}
+function navNext(){
+  if(currentView==='day')   currentDate.setDate(currentDate.getDate()+1);
+  else if(currentView==='week') currentDate.setDate(currentDate.getDate()+7);
+  else currentDate.setMonth(currentDate.getMonth()+1);
+  render();
+}
+function setView(v){
+  currentView=v;
+  ['day','week','month'].forEach(x=>{
+    document.getElementById('btn'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active',x===v);
+  });
+  render();
+}
+
+/* ══════════ MODALS ══════════ */
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function closeBg(e,id){ if(e.target===document.getElementById(id)) closeModal(id); }
+
+/* ── Modal 1: Nuevo Turno ── */
+function openNuevoTurno(){
+  document.getElementById('nt-fecha').value = dateToStr(currentDate);
+  openModal('modalNuevoTurno');
+}
+function selectNtColor(el){
+  document.querySelectorAll('.cp-dot').forEach(d=>d.classList.remove('active'));
+  el.classList.add('active');
+  ntColor = el.dataset.color;
+}
+function guardarTurno(){
+  const vet   = document.getElementById('nt-vet').value;
+  const fecha = document.getElementById('nt-fecha').value;
+  const box   = document.getElementById('nt-box').value;
+  const ini   = document.getElementById('nt-inicio').value;
+  const fin   = document.getElementById('nt-fin').value;
+  const tipo  = document.getElementById('nt-tipo').value;
+
+  if(!vet||!fecha||!box||!ini||!fin){
+    showToast('⚠️ Completa todos los campos obligatorios'); return;
+  }
+  const [ih,im]=ini.split(':').map(Number);
+  const [fh,fm]=fin.split(':').map(Number);
+  const startH=ih+im/60, endH=fh+fm/60;
+  if(endH<=startH){ showToast('⚠️ La hora fin debe ser mayor a la hora inicio'); return; }
+
+  SHIFTS.push({
+    id: Date.now(), vet, date:fecha, startH, endH, box, tipo, color:ntColor
+  });
+  closeModal('modalNuevoTurno');
+  currentDate = new Date(fecha+'T12:00:00');
+  setView('day');
+  showToast('✅ Turno asignado correctamente');
+}
+
+/* ══════════ TOAST ══════════ */
+function showToast(msg){
+  let t=document.getElementById('pvToast');
+  if(!t){ t=document.createElement('div'); t.id='pvToast'; t.className='pv-toast'; document.body.appendChild(t); }
+  t.textContent=msg; t.style.opacity='1';
+  clearTimeout(t._t); t._t=setTimeout(()=>{ t.style.opacity='0'; },2600);
+}
+
+/* ══════════ COLOR PICKER DOTS ══════════ */
+const cpStyle=document.createElement('style');
+cpStyle.textContent=`.cp-dot{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s;flex-shrink:0;}.cp-dot:hover,.cp-dot.active{border-color:#1e293b;transform:scale(1.2);}`;
+document.head.appendChild(cpStyle);
+
+/* ══════════ SIDEBAR ══════════ */
+function toggleSidebar(){
+  document.getElementById('adminSidebar').classList.toggle('open');
+  document.getElementById('adminOverlay').classList.toggle('show');
+}
+
+/* ══════════ ESC ══════════ */
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') closeModal('modalNuevoTurno');
+});
+
+/* ══════════ DATE HEADER ══════════ */
+document.getElementById('fechaHoy').textContent =
+  new Date().toLocaleDateString('es-CL',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+/* ══════════ INIT ══════════ */
+render();
+</script>
+</body>
+</html>
