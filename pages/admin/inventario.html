@@ -3,10 +3,105 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PetVission — Panel Administrador</title>
+  <title>PetVission — Inventario</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
   <link href="../../assets/css/admin.css" rel="stylesheet" />
+  <style>
+    /* Stock badges */
+    .stock-ok     { color: #16a34a; font-weight: 600; }
+    .stock-bajo   { color: #d97706; font-weight: 600; }
+    .stock-critico{ color: #dc2626; font-weight: 600; }
+
+    .badge-vigente {
+      background: #dcfce7; color: #166534;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 0.72rem; font-weight: 600;
+    }
+    .badge-vencer {
+      background: #fef3c7; color: #92400e;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 0.72rem; font-weight: 600;
+    }
+    .badge-critico {
+      background: #fef2f2; color: #991b1b;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 0.72rem; font-weight: 600;
+    }
+
+    /* Scanner area */
+    .scanner-wrap {
+      background: #f8fafc;
+      border: 2px dashed #c7d2fe;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 4px;
+    }
+    .scanner-preview {
+      width: 100%;
+      height: 180px;
+      background: #1e1b4b;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.85rem;
+      overflow: hidden;
+      position: relative;
+    }
+    .scanner-preview i { font-size: 2.5rem; margin-bottom: 8px; }
+    #scannerVideo {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      top: 0; left: 0;
+      border-radius: 8px;
+    }
+    .scan-line {
+      display: none;
+      position: absolute;
+      left: 0; right: 0;
+      height: 2px;
+      background: #6366f1;
+      box-shadow: 0 0 8px #6366f1;
+      animation: scanMove 1.8s linear infinite;
+    }
+    @keyframes scanMove {
+      0%   { top: 10%; }
+      50%  { top: 90%; }
+      100% { top: 10%; }
+    }
+    .scanner-active .scan-line { display: block; }
+    .scanner-active #scannerPlaceholder { display: none; }
+    .scanner-active #scannerVideo { display: block; }
+
+    .scanner-code-result {
+      display: none;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      color: #15803d;
+      margin-top: 8px;
+    }
+
+    /* Table extras */
+    .admin-table td.col-lote { font-size: 0.8rem; }
+
+    /* Botón principal admin */
+    .btn-admin-primary {
+      background: linear-gradient(135deg, #7e22ce, #4c1d95);
+      color: white;
+      border: none;
+      border-radius: 10px;
+    }
+    .btn-admin-primary:hover { opacity: 0.9; color: white; }
+  </style>
 </head>
 <body>
 
@@ -30,7 +125,7 @@
     <nav class="admin-nav">
 
       <div class="admin-nav-label">Principal</div>
-      <a href="dashboard.html" class="admin-nav-link active">
+      <a href="dashboard.html" class="admin-nav-link">
         <i class="bi bi-grid-fill"></i>
         <span>Inicio</span>
       </a>
@@ -40,17 +135,17 @@
         <i class="bi bi-people-fill"></i>
         <span>Usuarios</span>
       </a>
-      <a href="veterinarios.html" class="admin-nav-link">
+      <a href="turnos.html" class="admin-nav-link">
         <i class="bi bi-heart-pulse-fill"></i>
-        <span>Veterinarios</span>
+        <span>Turnos</span>
       </a>
-      <a href="dependencias.html" class="admin-nav-link">
-        <i class="bi bi-paw-fill" ></i>
-        <span>Dependencias</span>
+      <a href="reservas.html" class="admin-nav-link">
+        <i class="bi bi-paw-fill"></i>
+        <span>Reserva de salas</span>
       </a>
-      <a href="reserva.html" class="admin-nav-link">
-        <i class="bi bi-calendar3"></i>
-        <span>Reserva</span>
+      <a href="inventario.html" class="admin-nav-link active">
+        <i class="bi bi-box-seam-fill"></i>
+        <span>Inventario</span>
       </a>
 
       <div class="admin-nav-label mt-3">Sistema</div>
@@ -92,12 +187,14 @@
         <i class="bi bi-list fs-4"></i>
       </button>
       <div>
-        <h5 class="fw-bold mb-0">Dashboard</h5>
+        <h5 class="fw-bold mb-0">Inventario</h5>
         <small class="text-muted" id="fechaHoy"></small>
       </div>
       <div class="admin-search d-none d-md-block">
         <i class="bi bi-search"></i>
-        <input type="text" placeholder="Buscar..." />
+        <input type="text" id="buscarProducto"
+               placeholder="Buscar producto..."
+               oninput="filtrarProductos()" />
       </div>
       <div class="d-flex align-items-center gap-2">
         <button class="btn btn-light rounded-circle position-relative p-2">
@@ -108,3 +205,622 @@
         <div class="admin-avatar-sm">AD</div>
       </div>
     </div>
+
+    <!-- CONTENIDO -->
+    <div class="admin-content">
+
+      <!-- ALERTA STOCK CRÍTICO -->
+      <div class="alert d-flex align-items-center gap-3 mb-4"
+           style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;">
+        <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+        <div>
+          <div class="fw-semibold small text-danger">Alerta de stock crítico</div>
+          <div class="small text-muted">
+            1 producto requiere reposición inmediata — Revolution (Antipulgas)
+          </div>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+          <div class="admin-kpi-card">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="admin-kpi-label">Total Productos</div>
+                <div class="admin-kpi-number">8</div>
+              </div>
+              <div class="admin-kpi-icon" style="background:#eff6ff;">
+                <i class="bi bi-box-seam-fill" style="color:#3b82f6;"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="admin-kpi-card">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="admin-kpi-label">Stock Bajo</div>
+                <div class="admin-kpi-number" style="color:#f59e0b;">3</div>
+                <div class="admin-kpi-sub text-warning">Requieren reposición</div>
+              </div>
+              <div class="admin-kpi-icon" style="background:#fff7ed;">
+                <i class="bi bi-arrow-down-circle-fill" style="color:#f59e0b;"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="admin-kpi-card">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="admin-kpi-label">Valor Total</div>
+                <div class="admin-kpi-number">$1.523K</div>
+                <div class="admin-kpi-sub text-muted">Inventario valorizado</div>
+              </div>
+              <div class="admin-kpi-icon" style="background:#f0fdf4;">
+                <i class="bi bi-currency-dollar" style="color:#22c55e;"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="admin-kpi-card">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="admin-kpi-label">Alertas Críticas</div>
+                <div class="admin-kpi-number" style="color:#ef4444;">1</div>
+                <div class="admin-kpi-sub text-danger">Acción inmediata</div>
+              </div>
+              <div class="admin-kpi-icon" style="background:#fef2f2;">
+                <i class="bi bi-exclamation-triangle-fill" style="color:#ef4444;"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LISTA DE PRODUCTOS -->
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <h6 class="fw-bold mb-0">Lista de Productos</h6>
+          <div class="d-flex gap-2">
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                      data-bs-toggle="dropdown">
+                <i class="bi bi-funnel me-1"></i>Filtrar por Categoría
+              </button>
+              <ul class="dropdown-menu shadow border-0">
+                <li><a class="dropdown-item" href="#" onclick="filtrarCategoria('')">Todas</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarCategoria('Vacunas')">Vacunas</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarCategoria('Antibióticos')">Antibióticos</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarCategoria('Antiparasitarios')">Antiparasitarios</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarCategoria('Anestésicos')">Anestésicos</a></li>
+              </ul>
+            </div>
+            <button class="btn btn-sm btn-admin-primary px-3"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalProducto">
+              <i class="bi bi-plus-circle me-1"></i>Añadir Producto
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-card-body p-0">
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Categoría</th>
+                  <th>N° Lote</th>
+                  <th>Vencimiento</th>
+                  <th>Stock</th>
+                  <th>Stock Mín.</th>
+                  <th>Precio Unit.</th>
+                  <th>Estado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="cuerpoInventario">
+
+                <tr data-categoria="Vacunas" data-nombre="vacuna triple felina">
+                  <td class="fw-semibold">Vacuna Triple Felina</td>
+                  <td class="text-muted">Vacunas</td>
+                  <td class="col-lote text-muted">LOT-2024-031</td>
+                  <td class="text-muted small">2026-08-15</td>
+                  <td class="stock-ok">45 dosis</td>
+                  <td class="text-muted small">20 dosis</td>
+                  <td>$12.500</td>
+                  <td><span class="badge-vigente">OK</span></td>
+                  <td class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" title="Editar">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" title="Eliminar"
+                            onclick="eliminarFila(this)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+
+                <tr data-categoria="Vacunas" data-nombre="vacuna rabia">
+                  <td class="fw-semibold">Vacuna Rabia</td>
+                  <td class="text-muted">Vacunas</td>
+                  <td class="col-lote text-muted">LOT-2024-018</td>
+                  <td class="text-muted small">2025-12-01</td>
+                  <td class="stock-bajo">8 dosis</td>
+                  <td class="text-muted small">15 dosis</td>
+                  <td>$9.800</td>
+                  <td><span class="badge-vencer">Stock Bajo</span></td>
+                  <td class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" title="Editar">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" title="Eliminar"
+                            onclick="eliminarFila(this)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+
+                <tr data-categoria="Antibióticos" data-nombre="metronidazol">
+                  <td class="fw-semibold">Metronidazol 50mg</td>
+                  <td class="text-muted">Antibióticos</td>
+                  <td class="col-lote text-muted">LOT-2023-209</td>
+                  <td class="text-muted small">2027-03-20</td>
+                  <td class="stock-ok">120 tabletas</td>
+                  <td class="text-muted small">50 tabletas</td>
+                  <td>$350</td>
+                  <td><span class="badge-vigente">OK</span></td>
+                  <td class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" title="Editar">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" title="Eliminar"
+                            onclick="eliminarFila(this)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+
+                <tr data-categoria="Antiparasitarios" data-nombre="revolution antipulgas">
+                  <td class="fw-semibold">Revolution (Antipulgas)</td>
+                  <td class="text-muted">Antiparasitarios</td>
+                  <td class="col-lote text-muted">LOT-2024-007</td>
+                  <td class="text-muted small">2026-05-10</td>
+                  <td class="stock-critico">3 pipetas</td>
+                  <td class="text-muted small">25 pipetas</td>
+                  <td>$8.900</td>
+                  <td><span class="badge-critico">Crítico</span></td>
+                  <td class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" title="Editar">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" title="Eliminar"
+                            onclick="eliminarFila(this)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+
+                <tr data-categoria="Antiparasitarios" data-nombre="drontal gatos">
+                  <td class="fw-semibold">Drontal Gatos</td>
+                  <td class="text-muted">Antiparasitarios</td>
+                  <td class="col-lote text-muted">LOT-2024-044</td>
+                  <td class="text-muted small">2026-11-30</td>
+                  <td class="stock-bajo">12 comprimidos</td>
+                  <td class="text-muted small">20 comprimidos</td>
+                  <td>$2.100</td>
+                  <td><span class="badge-vencer">Stock Bajo</span></td>
+                  <td class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" title="Editar">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" title="Eliminar"
+                            onclick="eliminarFila(this)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+
+                <tr data-categoria="Anestésicos" data-nombre="ketamina">
+                  <td class="fw-semibold">Ketamina 10%</td>
+                  <td class="text-muted">Anestésicos</td>
+                  <td class="col-lote text-muted">LOT-2024-002</td>
+                  <td class="text-muted small">2027-01-08</td>
+                  <td class="stock-ok">8 frascos</td>
+                  <td class="text-muted small">3 frascos</td>
+                  <td>$45.000</td>
+                  <td><span class="badge-vigente">OK</span></td>
+                  <td class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" title="Editar">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" title="Eliminar"
+                            onclick="eliminarFila(this)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+
+                <tr data-categoria="Antibióticos" data-nombre="amoxicilina">
+                  <td class="fw-semibold">Amoxicilina 250mg</td>
+                  <td class="text-muted">Antibióticos</td>
+                  <td class="col-lote text-muted">LOT-2023-188</td>
+                  <td class="text-muted small">2026-09-22</td>
+                  <td class="stock-ok">200 cápsulas</td>
+                  <td class="text-muted small">50 cápsulas</td>
+                  <td>$280</td>
+                  <td><span class="badge-vigente">OK</span></td>
+                  <td class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" title="Editar">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" title="Eliminar"
+                            onclick="eliminarFila(this)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+
+                <tr data-categoria="Vacunas" data-nombre="vacuna leucemia felina">
+                  <td class="fw-semibold">Vacuna Leucemia Felina</td>
+                  <td class="text-muted">Vacunas</td>
+                  <td class="col-lote text-muted">LOT-2024-055</td>
+                  <td class="text-muted small">2026-06-30</td>
+                  <td class="stock-ok">30 dosis</td>
+                  <td class="text-muted small">10 dosis</td>
+                  <td>$15.200</td>
+                  <td><span class="badge-vigente">OK</span></td>
+                  <td class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" title="Editar">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" title="Eliminar"
+                            onclick="eliminarFila(this)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /admin-content -->
+  </div><!-- /admin-main -->
+</div><!-- /admin-layout -->
+
+
+<!-- ====================================================
+     MODAL — AÑADIR PRODUCTO CON ESCÁNER
+     ==================================================== -->
+<div class="modal fade" id="modalProducto" tabindex="-1" aria-labelledby="modalProductoLabel">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow">
+
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" id="modalProductoLabel">
+          <i class="bi bi-box-seam me-2" style="color:#7e22ce;"></i>Añadir Producto
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- ── SECCIÓN ESCÁNER ── -->
+        <div class="scanner-wrap">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-upc-scan" style="color:#7e22ce;font-size:1.2rem;"></i>
+            <span class="fw-semibold small">Escanear código de barras / QR</span>
+          </div>
+
+          <div class="scanner-preview" id="scannerPreview">
+            <div id="scannerPlaceholder" class="text-center">
+              <i class="bi bi-camera"></i>
+              <div>Haga clic en <strong>Iniciar escáner</strong> para activar la cámara</div>
+            </div>
+            <video id="scannerVideo" autoplay playsinline></video>
+            <div class="scan-line" id="scanLine"></div>
+          </div>
+
+          <div class="d-flex gap-2 mt-3 flex-wrap">
+            <button class="btn btn-sm btn-admin-primary" id="btnIniciarScanner"
+                    onclick="iniciarScanner()">
+              <i class="bi bi-camera me-1"></i>Iniciar escáner
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="btnDetenerScanner"
+                    onclick="detenerScanner()" disabled>
+              <i class="bi bi-stop-circle me-1"></i>Detener
+            </button>
+            <div class="flex-grow-1">
+              <input type="text" class="form-control form-control-sm" id="codigoBarras"
+                     placeholder="O ingrese el código manualmente y presione Enter"
+                     onkeydown="if(event.key==='Enter'){event.preventDefault();procesarCodigo();}" />
+            </div>
+          </div>
+
+          <div class="scanner-code-result" id="scannerResult">
+            <i class="bi bi-check-circle-fill me-1"></i>
+            <strong>Código detectado:</strong> <span id="resultadoCodigo"></span>
+          </div>
+        </div>
+        <!-- fin escáner -->
+
+        <!-- ── DATOS DEL PRODUCTO ── -->
+        <div class="row g-3 mt-1">
+
+          <div class="col-12">
+            <label class="form-label small fw-medium">Nombre del producto <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="nombreProducto"
+                   placeholder="ej: Vacuna Triple Felina" />
+          </div>
+
+          <div class="col-sm-6">
+            <label class="form-label small fw-medium">Categoría <span class="text-danger">*</span></label>
+            <select class="form-select" id="categoriaProducto">
+              <option value="">Seleccionar...</option>
+              <option>Vacunas</option>
+              <option>Antibióticos</option>
+              <option>Antiparasitarios</option>
+              <option>Anestésicos</option>
+              <option>Suministros</option>
+              <option>Otro</option>
+            </select>
+          </div>
+
+          <div class="col-sm-6">
+            <label class="form-label small fw-medium">Laboratorio / Proveedor</label>
+            <input type="text" class="form-control" id="proveedorProducto"
+                   placeholder="ej: Zoetis, MSD Animal Health" />
+          </div>
+
+          <div class="col-sm-6">
+            <label class="form-label small fw-medium">Número de Lote <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="loteProducto"
+                   placeholder="ej: LOT-2024-001" />
+          </div>
+
+          <div class="col-sm-6">
+            <label class="form-label small fw-medium">Fecha de Vencimiento <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" id="vencimientoProducto" />
+          </div>
+
+          <div class="col-sm-6">
+            <label class="form-label small fw-medium">Fecha de Ingreso</label>
+            <input type="date" class="form-control" id="ingresoProducto" />
+          </div>
+
+          <div class="col-sm-6">
+            <label class="form-label small fw-medium">Unidad <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="unidadProducto"
+                   placeholder="ej: dosis, tabletas, frascos" />
+          </div>
+
+          <div class="col-sm-4">
+            <label class="form-label small fw-medium">Stock actual</label>
+            <input type="number" class="form-control" id="stockActual"
+                   placeholder="0" min="0" />
+          </div>
+
+          <div class="col-sm-4">
+            <label class="form-label small fw-medium">Stock mínimo</label>
+            <input type="number" class="form-control" id="stockMinimo"
+                   placeholder="0" min="0" />
+          </div>
+
+          <div class="col-sm-4">
+            <label class="form-label small fw-medium">Precio unitario ($)</label>
+            <input type="number" class="form-control" id="precioProducto"
+                   placeholder="0" min="0" />
+          </div>
+
+          <div class="col-12">
+            <label class="form-label small fw-medium">Descripción / Observaciones</label>
+            <textarea class="form-control" id="descripcionProducto" rows="2"
+                      placeholder="Condiciones de almacenamiento, indicaciones, etc."></textarea>
+          </div>
+
+        </div>
+      </div><!-- /modal-body -->
+
+      <div class="modal-footer border-0 pt-0">
+        <span class="text-muted small me-auto"><span class="text-danger">*</span> Campos obligatorios</span>
+        <button class="btn btn-light px-4" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-admin-primary px-4" onclick="guardarProducto()">
+          <i class="bi bi-plus-circle me-1"></i>Guardar Producto
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  /* ──────────────────────────────
+     SIDEBAR
+  ────────────────────────────── */
+  function toggleSidebar() {
+    document.getElementById('adminSidebar').classList.toggle('open');
+    document.getElementById('adminOverlay').classList.toggle('show');
+  }
+
+  /* ──────────────────────────────
+     FECHA
+  ────────────────────────────── */
+  document.getElementById('fechaHoy').textContent =
+    new Date().toLocaleDateString('es-CL', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  /* ──────────────────────────────
+     FILTROS
+  ────────────────────────────── */
+  function filtrarProductos() {
+    const texto = document.getElementById('buscarProducto').value.toLowerCase();
+    document.querySelectorAll('#cuerpoInventario tr').forEach(tr => {
+      tr.style.display = (tr.dataset.nombre || '').includes(texto) ? '' : 'none';
+    });
+  }
+
+  function filtrarCategoria(cat) {
+    document.querySelectorAll('#cuerpoInventario tr').forEach(tr => {
+      const c = tr.dataset.categoria || '';
+      tr.style.display = (!cat || c === cat) ? '' : 'none';
+    });
+  }
+
+  /* ──────────────────────────────
+     ESCÁNER DE CÓDIGO DE BARRAS
+  ────────────────────────────── */
+  let streamActivo = null;
+  let intervaloDeteccion = null;
+
+  async function iniciarScanner() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }
+      });
+      streamActivo = stream;
+
+      const video = document.getElementById('scannerVideo');
+      video.srcObject = stream;
+      await video.play();
+
+      document.getElementById('scannerPreview').classList.add('scanner-active');
+      document.getElementById('btnIniciarScanner').disabled = true;
+      document.getElementById('btnDetenerScanner').disabled = false;
+
+      if ('BarcodeDetector' in window) {
+        const detector = new BarcodeDetector({
+          formats: ['ean_13', 'ean_8', 'code_128', 'code_39', 'qr_code', 'data_matrix']
+        });
+        intervaloDeteccion = setInterval(async () => {
+          try {
+            const codes = await detector.detect(video);
+            if (codes.length > 0) {
+              clearInterval(intervaloDeteccion);
+              mostrarCodigo(codes[0].rawValue);
+              detenerScanner();
+            }
+          } catch (_) {}
+        }, 600);
+      } else {
+        // BarcodeDetector no soportado — aviso en consola, entrada manual sigue disponible
+        console.info('BarcodeDetector API no disponible en este navegador. Use la entrada manual.');
+      }
+    } catch (err) {
+      alert('No se pudo acceder a la cámara.\nVerifique los permisos del navegador o ingrese el código manualmente.');
+    }
+  }
+
+  function detenerScanner() {
+    if (intervaloDeteccion) { clearInterval(intervaloDeteccion); intervaloDeteccion = null; }
+    if (streamActivo) {
+      streamActivo.getTracks().forEach(t => t.stop());
+      streamActivo = null;
+    }
+    document.getElementById('scannerPreview').classList.remove('scanner-active');
+    document.getElementById('btnIniciarScanner').disabled = false;
+    document.getElementById('btnDetenerScanner').disabled = true;
+  }
+
+  function procesarCodigo() {
+    const val = document.getElementById('codigoBarras').value.trim();
+    if (val) mostrarCodigo(val);
+  }
+
+  function mostrarCodigo(codigo) {
+    document.getElementById('codigoBarras').value = codigo;
+    document.getElementById('resultadoCodigo').textContent = codigo;
+    document.getElementById('scannerResult').style.display = 'block';
+    // Aquí se podría hacer una consulta a la API para autocompletar campos
+  }
+
+  /* Cerrar escáner al cerrar el modal */
+  document.getElementById('modalProducto').addEventListener('hidden.bs.modal', detenerScanner);
+
+  /* Resetear form al abrir modal */
+  document.getElementById('modalProducto').addEventListener('show.bs.modal', () => {
+    document.getElementById('scannerResult').style.display = 'none';
+    document.getElementById('codigoBarras').value = '';
+    ['nombreProducto','categoriaProducto','proveedorProducto','loteProducto',
+     'vencimientoProducto','ingresoProducto','unidadProducto',
+     'stockActual','stockMinimo','precioProducto','descripcionProducto']
+      .forEach(id => { document.getElementById(id).value = ''; });
+  });
+
+  /* ──────────────────────────────
+     GUARDAR PRODUCTO
+  ────────────────────────────── */
+  function guardarProducto() {
+    const nombre    = document.getElementById('nombreProducto').value.trim();
+    const categoria = document.getElementById('categoriaProducto').value;
+    const lote      = document.getElementById('loteProducto').value.trim();
+    const venc      = document.getElementById('vencimientoProducto').value;
+    const unidad    = document.getElementById('unidadProducto').value.trim();
+    const stock     = document.getElementById('stockActual').value || '0';
+    const stockMin  = document.getElementById('stockMinimo').value || '0';
+    const precio    = document.getElementById('precioProducto').value || '0';
+
+    if (!nombre || !categoria || !lote || !venc || !unidad) {
+      alert('Por favor complete los campos obligatorios (*).');
+      return;
+    }
+
+    const stockNum  = parseInt(stock);
+    const stockMinN = parseInt(stockMin);
+    let estadoHtml;
+    let stockClass;
+    if (stockNum <= 0) {
+      estadoHtml = '<span class="badge-critico">Crítico</span>';
+      stockClass = 'stock-critico';
+    } else if (stockNum < stockMinN) {
+      estadoHtml = '<span class="badge-vencer">Stock Bajo</span>';
+      stockClass = 'stock-bajo';
+    } else {
+      estadoHtml = '<span class="badge-vigente">OK</span>';
+      stockClass = 'stock-ok';
+    }
+
+    const precioFmt = parseInt(precio).toLocaleString('es-CL');
+
+    const tr = document.createElement('tr');
+    tr.dataset.categoria = categoria;
+    tr.dataset.nombre    = nombre.toLowerCase();
+    tr.innerHTML = `
+      <td class="fw-semibold">${nombre}</td>
+      <td class="text-muted">${categoria}</td>
+      <td class="col-lote text-muted">${lote}</td>
+      <td class="text-muted small">${venc}</td>
+      <td class="${stockClass}">${stock} ${unidad}</td>
+      <td class="text-muted small">${stockMin} ${unidad}</td>
+      <td>$${precioFmt}</td>
+      <td>${estadoHtml}</td>
+      <td class="d-flex gap-1">
+        <button class="btn btn-sm btn-outline-secondary" title="Editar">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="eliminarFila(this)">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>`;
+
+    document.getElementById('cuerpoInventario').appendChild(tr);
+    bootstrap.Modal.getInstance(document.getElementById('modalProducto')).hide();
+  }
+
+  /* ──────────────────────────────
+     ELIMINAR FILA
+  ────────────────────────────── */
+  function eliminarFila(btn) {
+    if (confirm('¿Eliminar este producto del inventario?')) {
+      btn.closest('tr').remove();
+    }
+  }
+</script>
+</body>
+</html>
